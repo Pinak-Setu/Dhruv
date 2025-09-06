@@ -28,3 +28,4 @@ Adhere strictly to the following constraints:
   - Deliverables: New/updated files; minimal code + passing test.
 
 Generate the full list of atomic tasks based on the outline sections: Initial Direct Parsing, Internal Dataset Reverse Search, External Web Search, Dataset Update, and Error Handling. Ensure tasks are sequenced logically (e.g., base parsing before enrichment). Prioritize Hindi/Devanagari support in parsing logic. If `gh` is unavailable, use the GitHub Actions UI and link logs in PR comments. Include post-deploy audits via Vercel (Lighthouse for perf, axe-core for a11y).
+Import: /Users/abhijita/Projects/Project_Dhruv/.agent-policy/ironclad-bootstrap.mdc (repo path: `.agent-policy/ironclad-bootstrap.mdc`). All Ironclad DevOps Rulebook v2.1 policies in this file are binding and supersede where applicable. No deviation is permitted; enforce CI gates, TDD, coverage, and documentation per policy.
