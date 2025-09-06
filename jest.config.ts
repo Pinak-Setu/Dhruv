@@ -11,6 +11,8 @@ const config = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testMatch: ['<rootDir>/tests/**/*.test.ts?(x)'],
+  coverageDirectory: '<rootDir>/coverage',
+  coverageReporters: ['json-summary', 'text', 'lcov'],
 };
 
 export default createJestConfig(config);

@@ -50,6 +50,11 @@
 - `perf-k6`: k6 `/api/health` + `scripts/assert-k6-p95.js` (≤300ms p95).
 - `e2e-smoke`: Playwright smoke suite.
 
+## Live CI Monitoring
+- Use GitHub CLI to stream workflows: `gh run watch --exit-status`.
+- Inspect failures: `gh run list` and `gh run view <id> --log`.
+- Reproduce locally (`npm run test:coverage`, `npm run build`, Lighthouse/axe/k6), fix, and push minimal patches until all green. Do not merge with red checks.
+
 ## Notes for Agents
 - Follow TDD (red→green→refactor) and scope lock from `.agent-policy/devops_agent_policy.yaml`.
 - Prefer reversible changes; update docs alongside code.
