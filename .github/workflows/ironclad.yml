@@ -77,7 +77,7 @@ jobs:
       - run: npm run build
       - run: npm run start & npx wait-on http://localhost:3000
       - name: Lighthouse CI
-        run: npx @lhci/cli@0.13.x autorun --collect.url=http://localhost:3000 --assert.preset=lighthouse:recommended
+        run: npx @lhci/cli@0.13.x autorun
       - name: axe-core accessibility
         run: npx @axe-core/cli http://localhost:3000 --exit 1
 
