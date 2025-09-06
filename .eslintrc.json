@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json.schemastore.org/eslintrc",
+  "extends": ["next/core-web-vitals"],
+  "parserOptions": { "project": true },
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    "indent": ["error", 2, { "SwitchCase": 1 }],
+    "no-console": ["warn", { "allow": ["warn", "error"] }]
+  }
+}
