@@ -79,7 +79,7 @@ jobs:
       - name: Lighthouse CI
         run: npx @lhci/cli@0.13.x autorun
       - name: Accessibility (pa11y)
-        run: npx pa11y http://localhost:3000 --threshold 0
+        run: npx pa11y http://localhost:3000 --threshold 0 --chrome-launcher-flags="--no-sandbox --disable-dev-shm-usage"
 
   perf-k6:
     runs-on: ubuntu-latest
