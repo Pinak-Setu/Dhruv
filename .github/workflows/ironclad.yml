@@ -78,8 +78,8 @@ jobs:
       - run: npm run start & npx wait-on http://localhost:3000
       - name: Lighthouse CI
         run: npx @lhci/cli@0.13.x autorun
-      - name: Accessibility (pa11y)
-        run: npx pa11y http://localhost:3000 --threshold 0 --chrome-launcher-flags="--no-sandbox --disable-dev-shm-usage"
+      - name: Accessibility (axe-core via Puppeteer)
+        run: node scripts/axe-check.js
 
   perf-k6:
     runs-on: ubuntu-latest
