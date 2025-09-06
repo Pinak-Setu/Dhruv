@@ -1,10 +1,12 @@
 import posts from '../../data/posts.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
 import { isParseEnabled } from '../../config/flags';
+import { useMemo, useState } from 'react';
 
 type Post = { id: string | number; timestamp: string; content: string };
 
 export default function Dashboard() {
+  const [locFilter, setLocFilter] = useState('');
   const parsed = (posts as Post[]).map((p) => {
     if (isParseEnabled()) {
       return { id: p.id, ...parsePost(p) };
@@ -22,9 +24,27 @@ export default function Dashboard() {
     if (s.length <= max) return { display: s, title: s };
     return { display: s.slice(0, Math.max(0, max - 1)) + '…', title: s };
   };
+  const filtered = useMemo(() => {
+    if (!locFilter.trim()) return parsed;
+    const q = locFilter.trim();
+    return parsed.filter((r) => r.where.join(' ').includes(q));
+  }, [parsed, locFilter]);
+
   return (
     <section className="p-4">
       <h2 className="sr-only">डैशबोर्ड</h2>
+      <div className="mb-3 flex gap-3">
+        <label className="text-sm">
+          स्थान फ़िल्टर
+          <input
+            aria-label="स्थान फ़िल्टर"
+            className="ml-2 border px-2 py-1 rounded"
+            placeholder="जैसे: रायगढ़"
+            value={locFilter}
+            onChange={(e) => setLocFilter(e.target.value)}
+          />
+        </label>
+      </div>
       <table aria-label="गतिविधि सारणी" className="min-w-full border-collapse">
         <thead>
           <tr>
@@ -36,7 +56,7 @@ export default function Dashboard() {
           </tr>
         </thead>
         <tbody data-testid="tbody">
-          {parsed.map((row) => (
+          {filtered.map((row) => (
             <tr key={row.id} role="row" className="align-top">
               <td className="p-2 border-b whitespace-nowrap">{row.when}</td>
               <td className="p-2 border-b" aria-label="कहाँ">{row.where.join(', ') || '—'}</td>
