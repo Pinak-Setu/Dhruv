@@ -29,7 +29,6 @@ export function computeMetrics() {
   const actionCounts = tally(allActions);
   return {
     places: topN(placeCounts, 5),
-    actions: topN(actionCounts, 5),
+    actions: topN(actionCounts, 10),
   };
 }
-

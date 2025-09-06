@@ -24,16 +24,45 @@ export function formatHindiDate(iso: string): string {
   return `${day} ${month} ${year}`;
 }
 
-const PLACE_REGEX = /(नई दिल्ली|नयी दिल्ली|रायगढ़|दिल्ली|रायपुर|भारत|छत्तीसगढ़)/g;
+// Known places and variants; extendable
+const PLACE_REGEX = /(नई दिल्ली|नयी दिल्ली|रायगढ़|दिल्ली|रायपुर|भारत|छत्तीसगढ़|खरसिया|गढ़ उमरिया|बस्तर|सरगुजा|जशपुर|बगीचा)/g;
 const HASHTAG_REGEX = /#[^\s#]+/g;
 const MENTION_REGEX = /@[A-Za-z0-9_]+/g;
-const ACTION_KEYWORDS = ['भूमिपूजन', 'समारोह', 'उद्घाटन', 'बैठक', 'सम्मिलित'];
+const ACTION_KEYWORDS = [
+  'बैठक',
+  'समापन',
+  'शिलान्यास',
+  'निरीक्षण',
+  'भूमिपूजन',
+  'उद्घाटन',
+  'संवाद',
+  'जन्मदिन',
+  'स्वागत',
+  'नमन',
+  'प्रार्थना',
+  'शुभकामनायें',
+  'लोकार्पण',
+  'समीक्षा',
+  'समारोह',
+  'सम्मिलित',
+];
 
 export function parsePost(post: Post) {
   const when = formatHindiDate(post.timestamp);
   const whereSet = new Set<string>();
+  // Direct matches from known list
   const matchWhere = post.content.match(PLACE_REGEX) || [];
   matchWhere.forEach((w) => whereSet.add(w));
+  // Heuristic: tokens before 'में' (e.g., 'रायगढ़ में' -> 'रायगढ़')
+  const inMatches = Array.from(post.content.matchAll(/([\p{L} ]{2,}?)\s+में/gu));
+  for (const m of inMatches) {
+    const token = (m[1] || '').trim();
+    if (token.length >= 2) {
+      // If token includes a known place word, prefer it
+      const known = (token.match(PLACE_REGEX) || [])[0];
+      if (known) whereSet.add(known);
+    }
+  }
   const where = Array.from(whereSet);
 
   const hashtags = Array.from(new Set(post.content.match(HASHTAG_REGEX) || []));
@@ -44,7 +73,7 @@ export function parsePost(post: Post) {
     if (post.content.includes(k)) what.push(k);
   }
 
-  const how = post.content.trim().slice(0, 120);
+  const how = post.content.trim().slice(0, 180);
 
   return {
     when,
