@@ -1,10 +1,23 @@
 import posts from '../../data/posts.json';
-import { parsePost } from '@/utils/parse';
+import { parsePost, formatHindiDate } from '@/utils/parse';
+import { isParseEnabled } from '../../config/flags';
 
 type Post = { id: string | number; timestamp: string; content: string };
 
 export default function Dashboard() {
-  const parsed = (posts as Post[]).map((p) => ({ id: p.id, ...parsePost(p) }));
+  const parsed = (posts as Post[]).map((p) => {
+    if (isParseEnabled()) {
+      return { id: p.id, ...parsePost(p) };
+    }
+    return {
+      id: p.id,
+      when: formatHindiDate(p.timestamp),
+      where: [] as string[],
+      what: [] as string[],
+      which: { mentions: [] as string[], hashtags: [] as string[] },
+      how: p.content,
+    };
+  });
   const truncate = (s: string, max: number) => {
     if (s.length <= max) return { display: s, title: s };
     return { display: s.slice(0, Math.max(0, max - 1)) + '…', title: s };
@@ -28,7 +41,7 @@ export default function Dashboard() {
               <td className="p-2 border-b whitespace-nowrap">{row.when}</td>
               <td className="p-2 border-b" aria-label="कहाँ">{row.where.join(', ') || '—'}</td>
               <td className="p-2 border-b" aria-label="क्या">{row.what.join(', ') || '—'}</td>
-              <td className="p-2 border-b">
+              <td className="p-2 border-b" aria-label="कौन/टैग">
                 {[...row.which.mentions, ...row.which.hashtags].join(' ') || '—'}
               </td>
               {(() => {
