@@ -3,7 +3,8 @@ import posts from '../../data/posts.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
 import { isParseEnabled } from '../../config/flags';
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import type { Route } from 'next';
 
 type Post = { id: string | number; timestamp: string; content: string };
 
@@ -15,7 +16,6 @@ export default function Dashboard() {
   const [actionFilter, setActionFilter] = useState('');
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
 
   // Sync from URL params
   useEffect(() => {
@@ -137,7 +137,7 @@ export default function Dashboard() {
             setFromDate('');
             setToDate('');
             setActionFilter('');
-            router.push(pathname);
+            router.push('/' as Route);
           }}
         >
           फ़िल्टर साफ़ करें
