@@ -1,10 +1,10 @@
 "use client";
 import { computeMetrics } from '@/utils/metrics';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import type { Route } from 'next';
 
 export default function Metrics() {
   const router = useRouter();
-  const pathname = usePathname();
   const { places, actions } = computeMetrics();
   return (
     <section className="p-4 space-y-6">
@@ -16,7 +16,7 @@ export default function Metrics() {
               <button
                 type="button"
                 className="underline text-blue-700 hover:text-blue-900"
-                onClick={() => router.push(`${pathname}?loc=${encodeURIComponent(p.key)}`)}
+                onClick={() => router.push((`/?loc=${encodeURIComponent(p.key)}`) as Route)}
                 aria-label={`${p.key} पर फ़िल्टर करें`}
                 title={`${p.key} पर फ़िल्टर करें`}
               >
@@ -34,7 +34,7 @@ export default function Metrics() {
               <button
                 type="button"
                 className="underline text-blue-700 hover:text-blue-900"
-                onClick={() => router.push(`${pathname}?action=${encodeURIComponent(a.key)}`)}
+                onClick={() => router.push((`/?action=${encodeURIComponent(a.key)}`) as Route)}
                 aria-label={`${a.key} पर फ़िल्टर करें`}
                 title={`${a.key} पर फ़िल्टर करें`}
               >
