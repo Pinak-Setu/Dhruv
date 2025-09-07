@@ -2,6 +2,7 @@
 import posts from '../../data/posts.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
 import { isParseEnabled } from '../../config/flags';
+import { matchTagFlexible } from '@/utils/tag-search';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -59,7 +60,7 @@ export default function Dashboard() {
       const q = tagFilter.trim();
       rows = rows.filter((r) => {
         const tags = [...r.which.mentions, ...r.which.hashtags];
-        return tags.some((t) => t.includes(q));
+        return tags.some((t) => matchTagFlexible(t, q));
       });
     }
     if (actionFilter.trim()) {
