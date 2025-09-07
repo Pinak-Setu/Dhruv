@@ -44,7 +44,7 @@ jobs:
           pip install -r api/requirements.txt pytest
       - name: Run API unit tests
         env:
-          PYTHONPATH: api
+          PYTHONPATH: .
         run: pytest -q api/tests/unit
 
   coverage-gate:
