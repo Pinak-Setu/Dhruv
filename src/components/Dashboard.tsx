@@ -57,10 +57,13 @@ export default function Dashboard() {
       rows = rows.filter((r) => r.where.some((w) => matchTextFlexible(w, q)));
     }
     if (tagFilter.trim()) {
-      const q = tagFilter.trim();
+      const tokens = tagFilter
+        .split(/[#,\s]+/)
+        .map((t) => t.trim())
+        .filter(Boolean);
       rows = rows.filter((r) => {
-        const tags = [...r.which.mentions, ...r.which.hashtags];
-        return tags.some((t) => matchTagFlexible(t, q));
+        const tags = [...r.which.hashtags, ...r.which.mentions];
+        return tokens.some((q) => tags.some((t) => matchTagFlexible(t, q)));
       });
     }
     if (actionFilter.trim()) {
