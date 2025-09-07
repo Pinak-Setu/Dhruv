@@ -1,11 +1,16 @@
 import re
-from typing import Dict, List
+from typing import Dict, List, Set
 
 NUKTA_MAP = str.maketrans({
   'क़':'क','ख़':'ख','ग़':'ग','ज़':'ज','फ़':'फ','ड़':'ड','ढ़':'ढ','ऱ':'र','य़':'य'
 })
 
 COMBINING = re.compile(r"[\u093C\u094D\u200C\u200D\uFE00-\uFE0F]")
+MATRA_MAP = {
+  'ा': 'aa', 'ि': 'i', 'ी': 'ii', 'ु': 'u', 'ू': 'uu',
+  'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au', 'ृ': 'ri',
+  'ॉ': 'o', 'ॅ': 'ae'
+}
 
 
 def fold_nukta(s: str) -> str:
@@ -21,7 +26,10 @@ def translit_basic(dev: str) -> str:
   }
   out = []
   for ch in dev:
-    out.append(m.get(ch, ch))
+    if ch in MATRA_MAP:
+      out.append(MATRA_MAP[ch])
+    else:
+      out.append(m.get(ch, ch))
   return ''.join(out)
 
 
@@ -35,6 +43,15 @@ def loosen_hinglish(s: str) -> str:
   )
 
 
+def schwa_variants(lat: str) -> Set[str]:
+  out: Set[str] = {lat}
+  if lat.endswith('a'):
+    out.add(lat[:-1])
+  if lat and lat[0].isalpha() and lat[0] not in 'aeiou':
+    out.add(lat[0] + 'a' + lat[1:])
+  return out
+
+
 def normalize_tokens(text: str, tokens: List[str]) -> Dict[str, List[str]]:
   items = tokens or re.findall(r"[#@]?[\w\u0900-\u097F]+", text or '')
   normalized: Dict[str, List[str]] = {}
@@ -43,8 +60,12 @@ def normalize_tokens(text: str, tokens: List[str]) -> Dict[str, List[str]]:
     if not base:
       continue
     d = fold_nukta(base)
-    lat = translit_basic(d)
+    lat = translit_basic(d).lower()
     lat2 = loosen_hinglish(lat)
-    normalized[base] = list({base, d, lat, lat2})
+    variants: Set[str] = {base, base.lower(), d, lat, lat2}
+    variants |= schwa_variants(lat)
+    variants |= schwa_variants(lat2)
+    # de-duplicate doubled letters
+    variants |= {re.sub(r'(.)\1+', r'\1', v) for v in list(variants)}
+    normalized[base] = list(variants)
   return normalized
-
