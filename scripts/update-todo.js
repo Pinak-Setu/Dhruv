@@ -9,6 +9,13 @@ if (!taskId) {
   process.exit(1);
 }
 
+// Validate and sanitize taskId to avoid regex injection and enforce expected pattern like "P1-06"
+const TASK_ID_PATTERN = /^[A-Z]\d-\d{2}$/;
+if (!TASK_ID_PATTERN.test(taskId)) {
+  console.error('Invalid task id. Expected format like P1-06');
+  process.exit(1);
+}
+
 const file = path.join(process.cwd(), 'TODO_PHASE1.md');
 if (!fs.existsSync(file)) {
   console.error('TODO file not found:', file);
@@ -17,20 +24,26 @@ if (!fs.existsSync(file)) {
 
 const now = new Date().toISOString();
 let text = fs.readFileSync(file, 'utf8');
-text = text.replace(
-  new RegExp(`^(- \[ \] ${taskId}:[^\n]*?)$`, 'm'),
-  `$1` // leave untouched if still pending (not matching our format)
-);
-
-// Mark in-progress to completed or pending to completed
-text = text.replace(
-  new RegExp(`^- \[~\] (${taskId}:[^\n]*?)\s*(\(started:[^\)]*\))?`, 'm'),
-  (_m, p1) => `- [x] ${p1} (completed: ${now})`
-);
-text = text.replace(
-  new RegExp(`^- \[ \] (${taskId}:[^\n]*?)\s*(\(created:[^\)]*\))?`, 'm'),
-  (_m, p1) => `- [x] ${p1} (completed: ${now})`
-);
+// Update lines deterministically without constructing regex from user input
+const lines = text.split('\n');
+const prefixPending = `- [ ] ${taskId}:`;
+const prefixInProgress = `- [~] ${taskId}:`;
+for (let i = 0; i < lines.length; i += 1) {
+  const line = lines[i];
+  if (line.startsWith(prefixInProgress)) {
+    // Strip any (started: ...) metadata and mark completed
+    const rest = line.slice(prefixInProgress.length).trim().replace(/\(started:[^)]*\)\s*/g, '').trim();
+    lines[i] = `- [x] ${taskId}:${rest ? ' ' + rest : ''} (completed: ${now})`;
+    continue;
+  }
+  if (line.startsWith(prefixPending)) {
+    // Strip any (created: ...) metadata and mark completed
+    const rest = line.slice(prefixPending.length).trim().replace(/\(created:[^)]*\)\s*/g, '').trim();
+    lines[i] = `- [x] ${taskId}:${rest ? ' ' + rest : ''} (completed: ${now})`;
+    continue;
+  }
+}
+text = lines.join('\n');
 
 // Update header timestamp
 text = text.replace(
@@ -40,4 +53,3 @@ text = text.replace(
 
 fs.writeFileSync(file, text, 'utf8');
 console.log('Updated TODO for', taskId);
-
