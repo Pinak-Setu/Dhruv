@@ -15,13 +15,16 @@ const MONTHS_HI = [
   'दिसंबर',
 ];
 
+const DAYS_HI = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'];
+
 export function formatHindiDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
-  const day = String(d.getUTCDate()).padStart(2, '0');
+  const dayNum = String(d.getUTCDate()).padStart(2, '0');
   const month = MONTHS_HI[d.getUTCMonth()];
   const year = d.getUTCFullYear();
-  return `${day} ${month} ${year}`;
+  const dow = DAYS_HI[d.getUTCDay()];
+  return `${dow}, ${dayNum} ${month} ${year}`;
 }
 
 // Known places and variants; extendable
@@ -47,6 +50,15 @@ const ACTION_KEYWORDS = [
   'सम्मिलित',
 ];
 
+// Noun/subject keywords to surface also as hashtags from content
+const NOUN_TAG_KEYWORDS = [
+  'किसान',
+  'सड़क',
+  'शिविर',
+  'महिला',
+  'स्टार्टअप',
+];
+
 export function parsePost(post: Post) {
   const when = formatHindiDate(post.timestamp);
   const whereSet = new Set<string>();
@@ -65,13 +77,21 @@ export function parsePost(post: Post) {
   }
   const where = Array.from(whereSet);
 
-  const hashtags = Array.from(new Set(post.content.match(HASHTAG_REGEX) || []));
+  const hashtagsSet = new Set<string>(post.content.match(HASHTAG_REGEX) || []);
   const mentions = Array.from(new Set(post.content.match(MENTION_REGEX) || []));
 
   const what: string[] = [];
   for (const k of ACTION_KEYWORDS) {
-    if (post.content.includes(k)) what.push(k);
+    if (post.content.includes(k)) {
+      what.push(k);
+      hashtagsSet.add(`#${k}`);
+    }
   }
+  for (const k of NOUN_TAG_KEYWORDS) {
+    if (post.content.includes(k)) hashtagsSet.add(`#${k}`);
+  }
+
+  const hashtags = Array.from(hashtagsSet);
 
   const how = post.content.trim().slice(0, 180);
 

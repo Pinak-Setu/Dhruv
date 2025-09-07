@@ -9,7 +9,7 @@ describe('Dashboard', () => {
     const table = screen.getByRole('table', { name: 'गतिविधि सारणी' });
     const headers = within(table).getAllByRole('columnheader').map((th) => th.textContent);
 
-    expect(headers).toEqual(['कब', 'कहाँ', 'क्या', 'कौन/टैग', 'कैसे']);
+    expect(headers).toEqual(['दिन / दिनांक', 'स्थान', 'दौरा / कार्यक्रम', 'कौन/टैग', 'विवरण']);
 
     const body = within(table).getAllByRole('row');
     // First row is header; count tbody rows by selecting rows inside tbody
@@ -24,4 +24,3 @@ describe('Dashboard', () => {
     expect(anyHashtag).toBe(true);
   });
 });
-

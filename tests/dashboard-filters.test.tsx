@@ -15,7 +15,7 @@ describe('Dashboard filters', () => {
     const after = within(tbody).getAllByRole('row').length;
     expect(after).toBeLessThan(before);
 
-    // Check that remaining rows include रायगढ़ in the कहाँ cell
+    // Check that remaining rows include रायगढ़ in the स्थान cell
     const rows = within(tbody).getAllByRole('row');
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
@@ -23,4 +23,3 @@ describe('Dashboard filters', () => {
     }
   });
 });
-
