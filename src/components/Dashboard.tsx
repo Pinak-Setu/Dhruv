@@ -54,7 +54,7 @@ export default function Dashboard() {
   return (
     <section className="p-4">
       <h2 className="sr-only">डैशबोर्ड</h2>
-      <div className="mb-3 flex gap-3">
+      <div className="mb-3 flex gap-3 items-end flex-wrap">
         <label className="text-sm">
           स्थान फ़िल्टर
           <input
@@ -85,6 +85,18 @@ export default function Dashboard() {
             onChange={(e) => setToDate(e.target.value)}
           />
         </label>
+        <button
+          type="button"
+          aria-label="फ़िल्टर साफ़ करें"
+          className="text-sm border px-3 py-1 rounded bg-gray-50 hover:bg-gray-100"
+          onClick={() => {
+            setLocFilter('');
+            setFromDate('');
+            setToDate('');
+          }}
+        >
+          फ़िल्टर साफ़ करें
+        </button>
       </div>
       <table aria-label="गतिविधि सारणी" className="min-w-full border-collapse">
         <thead>

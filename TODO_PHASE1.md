@@ -23,7 +23,7 @@ Legend: [ ] pending • [~] in_progress • [x] completed (timestamp)
 - [ ] P1-05: “कैसे” summarization tuning (created: 2025-09-06)
 
 ### E2 — Filters (UI)
-- [~] P1-06: Date range filter (from/to) (started: 2025-09-06)
+- [x] P1-06: Date range filter (from/to) (completed: 2025-09-07T14:20:28+00:00)
 - [ ] P1-07: Reset/clear filters (created: 2025-09-06)
 - [ ] P1-08: Tag/mention quick filter (created: 2025-09-06)
 
@@ -50,4 +50,3 @@ Legend: [ ] pending • [~] in_progress • [x] completed (timestamp)
 - [ ] P1-20: README quick start (created: 2025-09-06)
 - [ ] P1-21: Runbook updates for filters/charts (created: 2025-09-06)
 - [ ] P1-22: AGENTS.md sync (created: 2025-09-06)
-
