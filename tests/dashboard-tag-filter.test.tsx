@@ -42,4 +42,3 @@ describe('Dashboard tag/mention quick filter', () => {
     }
   });
 });
-
