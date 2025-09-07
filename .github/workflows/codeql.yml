@@ -8,7 +8,7 @@ on:
 
 jobs:
   analyze:
-    name: Analyze (CodeQL)
+    name: CodeQL
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -34,4 +34,3 @@ jobs:
         uses: github/codeql-action/analyze@v3
         with:
           category: "/language:${{matrix.language}}"
-
