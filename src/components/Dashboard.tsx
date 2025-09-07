@@ -2,6 +2,7 @@
 import posts from '../../data/posts.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
 import { isParseEnabled } from '../../config/flags';
+import { matchTagFlexible, matchTextFlexible } from '@/utils/tag-search';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { Route } from 'next';
@@ -53,7 +54,7 @@ export default function Dashboard() {
     let rows = parsed;
     if (locFilter.trim()) {
       const q = locFilter.trim();
-      rows = rows.filter((r) => r.where.join(' ').includes(q));
+      rows = rows.filter((r) => r.where.some((w) => matchTextFlexible(w, q)));
     }
     if (tagFilter.trim()) {
       const q = tagFilter.trim();
