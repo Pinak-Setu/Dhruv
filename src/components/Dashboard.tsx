@@ -90,7 +90,7 @@ export default function Dashboard() {
   return (
     <section className="p-4">
       <h2 className="sr-only">डैशबोर्ड</h2>
-      <div className="mb-3 flex gap-3">
+      <div className="mb-3 flex gap-3 items-end flex-wrap">
         <label className="text-sm">
           स्थान फ़िल्टर
           <input

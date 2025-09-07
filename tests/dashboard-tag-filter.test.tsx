@@ -16,6 +16,7 @@ describe('Dashboard tag/mention quick filter', () => {
     const filtered = within(tbody).getAllByRole('row').length;
     expect(filtered).toBeLessThan(baseline);
 
+    // All remaining rows should include the hashtag in the tag cell
     for (const row of within(tbody).getAllByRole('row')) {
       const tagCell = within(row).getAllByRole('cell')[3];
       expect(tagCell.textContent || '').toMatch(/#समारोह/);
@@ -41,4 +42,3 @@ describe('Dashboard tag/mention quick filter', () => {
     }
   });
 });
-
