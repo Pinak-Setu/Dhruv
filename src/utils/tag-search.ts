@@ -100,9 +100,27 @@ export function buildSearchKeys(raw: string): Set<string> {
     const latin = transliterateDevanagariToLatin(s);
     for (const v of collapseVariants(latin)) keys.add(v);
   }
+  // Synonym enrichment for common place/tag variants (Hindi/Hinglish)
+  const add = (k: string) => keys.add(k);
+  const snapshot = Array.from(keys);
+  for (const k of snapshot) {
+    if (/(^|\b)new\s*delhi\b/.test(k) || /(\b)nai|nayi\s*dilli\b/.test(k) || /नई\s*दिल्ली|नयी\s*दिल्ली/.test(k)) {
+      add('new delhi'); add('nayi dilli'); add('nai dilli'); add('नई दिल्ली'); add('नयी दिल्ली'); add('delhi'); add('dilli');
+    }
+    if (/\bdelhi\b/.test(k) || /\bdilli\b/.test(k) || /दिल्ली/.test(k)) {
+      add('delhi'); add('dilli');
+    }
+    if (/\braigarh\b/.test(k) || /\braygarh\b/.test(k) || /रायगढ़/.test(k)) {
+      add('raigarh'); add('raygarh');
+    }
+    if (/\braipur\b/.test(k) || /रायपुर/.test(k)) {
+      add('raipur');
+    }
+  }
   return keys;
 }
 
+// Generic flexible match usable for tags or free text (e.g., places)
 export function matchTagFlexible(tag: string, query: string): boolean {
   if (!tag || !query) return false;
   const tagKeys = buildSearchKeys(tag);
@@ -115,3 +133,5 @@ export function matchTagFlexible(tag: string, query: string): boolean {
   }
   return false;
 }
+
+export const matchTextFlexible = matchTagFlexible;
