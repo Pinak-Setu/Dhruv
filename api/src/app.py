@@ -6,6 +6,7 @@ import time
 from flask import Flask, jsonify, request
 from .parsing.normalization import normalize_tokens
 from .parsing.alias_loader import load_aliases, AliasIndex
+from .metrics import inc, snapshot as metrics_snapshot
 
 
 ALIAS_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'aliases.json')
@@ -55,6 +56,7 @@ def create_app() -> Flask:
     result = normalize_tokens(text=text, tokens=tokens)
     _ensure_aliases()
     alias_hits = []
+    inc('normalize_calls_total')
     if _ALIASES is not None:
       for original, variants in result.items():
         for v in variants:
@@ -69,6 +71,10 @@ def create_app() -> Flask:
               'confidence': payload.get('confidence', 1.0),
               'source': payload.get('source', 'manual'),
             })
+    if alias_hits:
+      inc('alias_hits_total', by=len(alias_hits))
+    else:
+      inc('alias_misses_total')
     return jsonify({
       'traceId': str(uuid.uuid4()),
       'input': {'text': text, 'tokens': tokens},
@@ -109,8 +115,13 @@ def create_app() -> Flask:
       text = (it.get('text') or '').strip()
       tokens = it.get('tokens') or []
       normalized = normalize_tokens(text=text, tokens=tokens)
+      inc('normalize_calls_total')
       out.append({'traceId': str(uuid.uuid4()), 'input': {'text': text, 'tokens': tokens}, 'normalized': normalized})
     return jsonify({'items': out})
+
+  @app.get('/api/metrics')
+  def metrics():
+    return jsonify(metrics_snapshot())
 
   return app
 
