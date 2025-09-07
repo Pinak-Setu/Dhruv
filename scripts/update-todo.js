@@ -16,7 +16,7 @@ if (!TASK_ID_PATTERN.test(taskId)) {
   process.exit(1);
 }
 
-const file = path.join(process.cwd(), 'TODO_PHASE1.md');
+const file = path.join(process.cwd(), 'TODO_TASKLIST.md');
 if (!fs.existsSync(file)) {
   console.error('TODO file not found:', file);
   process.exit(1);

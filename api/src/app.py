@@ -10,8 +10,8 @@ from .metrics import inc, snapshot as metrics_snapshot
 
 
 ALIAS_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'aliases.json')
-_ALIASES: 'AliasIndex | None' = None
-_ALIASES_ETAG: 'str | None' = None
+_ALIASES: AliasIndex | None = None
+_ALIASES_ETAG: str | None = None
 
 
 def _update_etag():
@@ -55,6 +55,7 @@ def create_app() -> Flask:
     tokens = payload.get('tokens') or []
     result = normalize_tokens(text=text, tokens=tokens)
     _ensure_aliases()
+    # Build alias matches with lineage
     alias_hits = []
     inc('normalize_calls_total')
     if _ALIASES is not None:
@@ -122,7 +123,6 @@ def create_app() -> Flask:
   @app.get('/api/metrics')
   def metrics():
     return jsonify(metrics_snapshot())
-
   return app
 
 

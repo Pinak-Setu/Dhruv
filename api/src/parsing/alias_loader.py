@@ -8,7 +8,9 @@ class AliasIndex:
         self.version = data.get('version', 1)
         self.tags = data.get('tags', {})
         self.locations = data.get('locations', {})
+        # variant -> (domain, canonical)
         self.variant_to_canonical: Dict[str, Tuple[str, str]] = {}
+        # canonical -> payload including variants/confidence/source
         self.canonical_payload: Dict[Tuple[str, str], Dict[str, Any]] = {}
         self._build_index()
 
@@ -25,6 +27,7 @@ class AliasIndex:
         ingest('locations', self.locations)
 
     def lookup(self, token: str):
+        """Return (domain, canonical, payload) if token maps to an alias, else None."""
         hit = self.variant_to_canonical.get(token)
         if not hit:
             return None
@@ -32,7 +35,7 @@ class AliasIndex:
         return hit[0], hit[1], payload
 
 
-def validate_aliases(data: Dict[str, Any]):
+def validate_aliases(data: Dict[str, Any]) -> Tuple[bool, str]:
     if not isinstance(data, dict):
         return False, 'root not dict'
     for domain in ['tags', 'locations']:
@@ -64,4 +67,3 @@ def load_aliases(path: str) -> AliasIndex:
     if not ok:
         raise ValueError(f'aliases.json invalid: {msg}')
     return AliasIndex(data)
-

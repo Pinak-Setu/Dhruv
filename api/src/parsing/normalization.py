@@ -51,7 +51,6 @@ def schwa_variants(lat: str) -> Set[str]:
     out.add(lat[0] + 'a' + lat[1:])
   return out
 
-
 def normalize_tokens(text: str, tokens: List[str]) -> Dict[str, List[str]]:
   items = tokens or re.findall(r"[#@]?[\w\u0900-\u097F]+", text or '')
   normalized: Dict[str, List[str]] = {}
@@ -65,7 +64,6 @@ def normalize_tokens(text: str, tokens: List[str]) -> Dict[str, List[str]]:
     variants: Set[str] = {base, base.lower(), d, lat, lat2}
     variants |= schwa_variants(lat)
     variants |= schwa_variants(lat2)
-    # de-duplicate doubled letters
     variants |= {re.sub(r'(.)\1+', r'\1', v) for v in list(variants)}
     normalized[base] = list(variants)
   return normalized
