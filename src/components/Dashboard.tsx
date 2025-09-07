@@ -2,15 +2,35 @@
 import posts from '../../data/posts.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
 import { isParseEnabled } from '../../config/flags';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 type Post = { id: string | number; timestamp: string; content: string };
 
 export default function Dashboard() {
   const [locFilter, setLocFilter] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [tagFilter, setTagFilter] = useState('');
+  const [actionFilter, setActionFilter] = useState('');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Sync from URL params
+  useEffect(() => {
+    const loc = searchParams.get('loc') ?? '';
+    const tag = searchParams.get('tag') ?? '';
+    const from = searchParams.get('from') ?? '';
+    const to = searchParams.get('to') ?? '';
+    const action = searchParams.get('action') ?? '';
+    setLocFilter(loc);
+    setTagFilter(tag);
+    setFromDate(from);
+    setToDate(to);
+    setActionFilter(action);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   const parsed = (posts as Post[]).map((p) => {
     if (isParseEnabled()) {
       return { id: p.id, ts: p.timestamp, ...parsePost(p) };
@@ -42,6 +62,10 @@ export default function Dashboard() {
         return tags.some((t) => t.includes(q));
       });
     }
+    if (actionFilter.trim()) {
+      const q = actionFilter.trim();
+      rows = rows.filter((r) => r.what.some((w) => w.includes(q)));
+    }
     const from = fromDate ? new Date(fromDate) : null;
     const to = toDate ? new Date(toDate) : null;
     if (from || to) {
@@ -57,7 +81,7 @@ export default function Dashboard() {
       });
     }
     return rows;
-  }, [parsed, locFilter, fromDate, toDate]);
+  }, [parsed, locFilter, tagFilter, actionFilter, fromDate, toDate]);
 
   return (
     <section className="p-4">
@@ -103,6 +127,21 @@ export default function Dashboard() {
             onChange={(e) => setToDate(e.target.value)}
           />
         </label>
+        <button
+          type="button"
+          aria-label="फ़िल्टर साफ़ करें"
+          className="text-sm border px-3 py-1 rounded bg-gray-50 hover:bg-gray-100"
+          onClick={() => {
+            setLocFilter('');
+            setTagFilter('');
+            setFromDate('');
+            setToDate('');
+            setActionFilter('');
+            router.push(pathname);
+          }}
+        >
+          फ़िल्टर साफ़ करें
+        </button>
       </div>
       <table aria-label="गतिविधि सारणी" className="min-w-full border-collapse">
         <thead>
