@@ -40,11 +40,29 @@ def create_app() -> Flask:
     tokens = payload.get('tokens') or []
     result = normalize_tokens(text=text, tokens=tokens)
     _ensure_aliases()
+    # Build alias matches with lineage
+    alias_hits = []
+    if _ALIASES is not None:
+      for original, variants in result.items():
+        for v in variants:
+          hit = _ALIASES.lookup(v)
+          if hit:
+            domain, canonical, payload = hit
+            alias_hits.append({
+              'original': original,
+              'variant': v,
+              'domain': domain,
+              'canonical': canonical,
+              'confidence': payload.get('confidence', 1.0),
+              'source': payload.get('source', 'manual'),
+            })
+
     return jsonify({
       'traceId': str(uuid.uuid4()),
       'input': {'text': text, 'tokens': tokens},
       'normalized': result,
       'aliasesVersion': getattr(_ALIASES, 'version', None),
+      'aliases': alias_hits,
     })
 
   @app.get('/api/aliases')

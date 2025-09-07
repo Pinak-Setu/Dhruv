@@ -26,6 +26,14 @@ class AliasIndex:
         ingest('tags', self.tags)
         ingest('locations', self.locations)
 
+    def lookup(self, token: str):
+        """Return (domain, canonical, payload) if token maps to an alias, else None."""
+        hit = self.variant_to_canonical.get(token)
+        if not hit:
+            return None
+        payload = self.canonical_payload.get(hit, {})
+        return hit[0], hit[1], payload
+
 
 def validate_aliases(data: Dict[str, Any]) -> Tuple[bool, str]:
     if not isinstance(data, dict):
@@ -55,4 +63,3 @@ def load_aliases(path: str) -> AliasIndex:
     if not ok:
         raise ValueError(f'aliases.json invalid: {msg}')
     return AliasIndex(data)
-

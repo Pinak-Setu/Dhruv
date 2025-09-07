@@ -14,3 +14,8 @@ def test_validate_aliases_schema():
     ok, msg = validate_aliases({'tags': {'x': {'variants': []}}, 'locations': {}})
     assert ok, msg
 
+
+def test_validate_aliases_rejects_bad_types():
+    bad = {'tags': {'x': {'variants': 'not-a-list'}}, 'locations': {}}
+    ok, msg = validate_aliases(bad)
+    assert not ok
