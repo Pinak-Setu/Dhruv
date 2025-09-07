@@ -1,8 +1,36 @@
 import os
 import json
 import uuid
+import hashlib
+import time
 from flask import Flask, jsonify, request
 from .parsing.normalization import normalize_tokens
+from .parsing.alias_loader import load_aliases, AliasIndex
+
+
+ALIAS_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'aliases.json')
+_ALIASES: 'AliasIndex | None' = None
+_ALIASES_ETAG: 'str | None' = None
+
+
+def _update_etag():
+  global _ALIASES_ETAG
+  try:
+    with open(ALIAS_PATH, 'rb') as f:
+      data = f.read()
+    _ALIASES_ETAG = hashlib.md5(data).hexdigest()
+  except Exception:
+    _ALIASES_ETAG = None
+
+
+def _ensure_aliases():
+  global _ALIASES
+  if _ALIASES is None and os.getenv('FLAG_ALIAS_LOADER', 'on') != 'off':
+    try:
+      _ALIASES = load_aliases(ALIAS_PATH)
+      _update_etag()
+    except Exception:
+      _ALIASES = None
 
 
 def create_app() -> Flask:
@@ -25,24 +53,66 @@ def create_app() -> Flask:
     text = (payload.get('text') or '').strip()
     tokens = payload.get('tokens') or []
     result = normalize_tokens(text=text, tokens=tokens)
+    _ensure_aliases()
+    alias_hits = []
+    if _ALIASES is not None:
+      for original, variants in result.items():
+        for v in variants:
+          hit = _ALIASES.lookup(v)
+          if hit:
+            domain, canonical, payload = hit
+            alias_hits.append({
+              'original': original,
+              'variant': v,
+              'domain': domain,
+              'canonical': canonical,
+              'confidence': payload.get('confidence', 1.0),
+              'source': payload.get('source', 'manual'),
+            })
     return jsonify({
       'traceId': str(uuid.uuid4()),
       'input': {'text': text, 'tokens': tokens},
       'normalized': result,
+      'aliasesVersion': getattr(_ALIASES, 'version', None),
+      'aliases': alias_hits,
     })
 
   @app.get('/api/aliases')
   def get_aliases():
-    # Stub: will load from data/aliases.json in later tasks
-    return jsonify({'version': 1, 'aliases': {}})
+    _ensure_aliases()
+    if _ALIASES is None:
+      resp = jsonify({'version': None, 'aliases': {}})
+    else:
+      resp = jsonify({'version': _ALIASES.version, 'tags': _ALIASES.tags, 'locations': _ALIASES.locations})
+    if _ALIASES_ETAG:
+      resp.headers['ETag'] = _ALIASES_ETAG
+    return resp
 
   @app.post('/api/aliases/reload')
   def reload_aliases():
-    # Stubbed endpoint for hot reload; guarded by flag in later tasks
-    return jsonify({'reloaded': True, 'traceId': str(uuid.uuid4())})
+    if os.getenv('FLAG_ALIAS_LOADER', 'on') == 'off':
+      return jsonify({'reloaded': False, 'disabled': True}), 400
+    try:
+      global _ALIASES
+      _ALIASES = load_aliases(ALIAS_PATH)
+      _update_etag()
+      return jsonify({'reloaded': True, 'version': _ALIASES.version, 'updatedAt': int(time.time()), 'traceId': str(uuid.uuid4())})
+    except Exception as e:
+      return jsonify({'reloaded': False, 'error': str(e)}), 500
+
+  @app.post('/api/normalize/batch')
+  def normalize_batch():
+    payload = request.get_json(silent=True) or {}
+    items = payload.get('items') or []
+    out = []
+    for it in items:
+      text = (it.get('text') or '').strip()
+      tokens = it.get('tokens') or []
+      normalized = normalize_tokens(text=text, tokens=tokens)
+      out.append({'traceId': str(uuid.uuid4()), 'input': {'text': text, 'tokens': tokens}, 'normalized': normalized})
+    return jsonify({'items': out})
 
   return app
 
 
 app = create_app()
-
