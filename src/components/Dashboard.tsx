@@ -2,15 +2,35 @@
 import posts from '../../data/posts.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
 import { isParseEnabled } from '../../config/flags';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
 type Post = { id: string | number; timestamp: string; content: string };
 
 export default function Dashboard() {
   const [locFilter, setLocFilter] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [tagFilter, setTagFilter] = useState('');
+  const [actionFilter, setActionFilter] = useState('');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Sync from URL params
+  useEffect(() => {
+    const loc = searchParams.get('loc') ?? '';
+    const tag = searchParams.get('tag') ?? '';
+    const from = searchParams.get('from') ?? '';
+    const to = searchParams.get('to') ?? '';
+    const action = searchParams.get('action') ?? '';
+    setLocFilter(loc);
+    setTagFilter(tag);
+    setFromDate(from);
+    setToDate(to);
+    setActionFilter(action);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
   const parsed = (posts as Post[]).map((p) => {
     if (isParseEnabled()) {
       return { id: p.id, ts: p.timestamp, ...parsePost(p) };
@@ -41,6 +61,10 @@ export default function Dashboard() {
         const tags = [...r.which.hashtags, ...r.which.mentions];
         return tags.some((t) => t.includes(q));
       });
+    }
+    if (actionFilter.trim()) {
+      const q = actionFilter.trim();
+      rows = rows.filter((r) => r.what.some((w) => w.includes(q)));
     }
     const from = fromDate ? new Date(fromDate) : null;
     const to = toDate ? new Date(toDate) : null;
@@ -112,6 +136,8 @@ export default function Dashboard() {
             setTagFilter('');
             setFromDate('');
             setToDate('');
+            setActionFilter('');
+            router.push(pathname);
           }}
         >
           फ़िल्टर साफ़ करें
