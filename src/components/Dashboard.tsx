@@ -8,12 +8,15 @@ type Post = { id: string | number; timestamp: string; content: string };
 
 export default function Dashboard() {
   const [locFilter, setLocFilter] = useState('');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const parsed = (posts as Post[]).map((p) => {
     if (isParseEnabled()) {
-      return { id: p.id, ...parsePost(p) };
+      return { id: p.id, ts: p.timestamp, ...parsePost(p) };
     }
     return {
       id: p.id,
+      ts: p.timestamp,
       when: formatHindiDate(p.timestamp),
       where: [] as string[],
       what: [] as string[],
@@ -26,10 +29,27 @@ export default function Dashboard() {
     return { display: s.slice(0, Math.max(0, max - 1)) + '…', title: s };
   };
   const filtered = useMemo(() => {
-    if (!locFilter.trim()) return parsed;
-    const q = locFilter.trim();
-    return parsed.filter((r) => r.where.join(' ').includes(q));
-  }, [parsed, locFilter]);
+    let rows = parsed;
+    if (locFilter.trim()) {
+      const q = locFilter.trim();
+      rows = rows.filter((r) => r.where.join(' ').includes(q));
+    }
+    const from = fromDate ? new Date(fromDate) : null;
+    const to = toDate ? new Date(toDate) : null;
+    if (from || to) {
+      rows = rows.filter((r) => {
+        const d = new Date(r.ts);
+        if (from && d < from) return false;
+        if (to) {
+          const end = new Date(to);
+          end.setHours(23, 59, 59, 999);
+          if (d > end) return false;
+        }
+        return true;
+      });
+    }
+    return rows;
+  }, [parsed, locFilter, fromDate, toDate]);
 
   return (
     <section className="p-4">
@@ -43,6 +63,26 @@ export default function Dashboard() {
             placeholder="जैसे: रायगढ़"
             value={locFilter}
             onChange={(e) => setLocFilter(e.target.value)}
+          />
+        </label>
+        <label className="text-sm">
+          तिथि से
+          <input
+            aria-label="तिथि से"
+            type="date"
+            className="ml-2 border px-2 py-1 rounded"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+          />
+        </label>
+        <label className="text-sm">
+          तिथि तक
+          <input
+            aria-label="तिथि तक"
+            type="date"
+            className="ml-2 border px-2 py-1 rounded"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
           />
         </label>
       </div>
