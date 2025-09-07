@@ -3,6 +3,20 @@ import json
 import uuid
 from flask import Flask, jsonify, request
 from .parsing.normalization import normalize_tokens
+from .parsing.alias_loader import load_aliases, AliasIndex
+
+
+ALIAS_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'aliases.json')
+_ALIASES: AliasIndex | None = None
+
+
+def _ensure_aliases():
+  global _ALIASES
+  if _ALIASES is None and os.getenv('FLAG_ALIAS_LOADER', 'on') != 'off':
+    try:
+      _ALIASES = load_aliases(ALIAS_PATH)
+    except Exception:
+      _ALIASES = None
 
 
 def create_app() -> Flask:
@@ -25,24 +39,33 @@ def create_app() -> Flask:
     text = (payload.get('text') or '').strip()
     tokens = payload.get('tokens') or []
     result = normalize_tokens(text=text, tokens=tokens)
+    _ensure_aliases()
     return jsonify({
       'traceId': str(uuid.uuid4()),
       'input': {'text': text, 'tokens': tokens},
       'normalized': result,
+      'aliasesVersion': getattr(_ALIASES, 'version', None),
     })
 
   @app.get('/api/aliases')
   def get_aliases():
-    # Stub: will load from data/aliases.json in later tasks
-    return jsonify({'version': 1, 'aliases': {}})
+    _ensure_aliases()
+    if _ALIASES is None:
+      return jsonify({'version': None, 'aliases': {}})
+    return jsonify({'version': _ALIASES.version, 'tags': _ALIASES.tags, 'locations': _ALIASES.locations})
 
   @app.post('/api/aliases/reload')
   def reload_aliases():
-    # Stubbed endpoint for hot reload; guarded by flag in later tasks
-    return jsonify({'reloaded': True, 'traceId': str(uuid.uuid4())})
+    if os.getenv('FLAG_ALIAS_LOADER', 'on') == 'off':
+      return jsonify({'reloaded': False, 'disabled': True}), 400
+    try:
+      global _ALIASES
+      _ALIASES = load_aliases(ALIAS_PATH)
+      return jsonify({'reloaded': True, 'version': _ALIASES.version, 'traceId': str(uuid.uuid4())})
+    except Exception as e:
+      return jsonify({'reloaded': False, 'error': str(e)}), 500
 
   return app
 
 
 app = create_app()
-
