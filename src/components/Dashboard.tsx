@@ -10,6 +10,7 @@ export default function Dashboard() {
   const [locFilter, setLocFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
   const parsed = (posts as Post[]).map((p) => {
     if (isParseEnabled()) {
       return { id: p.id, ts: p.timestamp, ...parsePost(p) };
@@ -33,6 +34,13 @@ export default function Dashboard() {
     if (locFilter.trim()) {
       const q = locFilter.trim();
       rows = rows.filter((r) => r.where.join(' ').includes(q));
+    }
+    if (tagFilter.trim()) {
+      const q = tagFilter.trim();
+      rows = rows.filter((r) => {
+        const tags = [...r.which.hashtags, ...r.which.mentions];
+        return tags.some((t) => t.includes(q));
+      });
     }
     const from = fromDate ? new Date(fromDate) : null;
     const to = toDate ? new Date(toDate) : null;
@@ -66,6 +74,16 @@ export default function Dashboard() {
           />
         </label>
         <label className="text-sm">
+          टैग/मेंशन फ़िल्टर
+          <input
+            aria-label="टैग/मेंशन फ़िल्टर"
+            className="ml-2 border px-2 py-1 rounded"
+            placeholder="#समारोह, @PMOIndia"
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+          />
+        </label>
+        <label className="text-sm">
           तिथि से
           <input
             aria-label="तिथि से"
@@ -91,6 +109,7 @@ export default function Dashboard() {
           className="text-sm border px-3 py-1 rounded bg-gray-50 hover:bg-gray-100"
           onClick={() => {
             setLocFilter('');
+            setTagFilter('');
             setFromDate('');
             setToDate('');
           }}
