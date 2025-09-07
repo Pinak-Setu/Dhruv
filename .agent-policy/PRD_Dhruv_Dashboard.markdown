@@ -171,6 +171,21 @@ Constraints
 - No new Python packages beyond requirements. Use `re`, `pandas`, `indic-nlp-library`, `requests`, `Flask`.
 - Feature flags for risky changes; rollback ≤10 min. All changes documented (inline + runbook).
 
+### Phase 2 — Sprint 1 (Now)
+Scope: bootstrap backend API + normalization baseline + alias store/loader and minimal /api/normalize contract. No UI dependency changes beyond feature flag wiring.
+
+Deliverables (all TDD, 95/70):
+- api/ Flask app with `/api/health`, `/api/normalize` (stub), `/api/aliases` (GET), `/api/aliases/reload` (POST, gated).
+- Normalization core: nukta folding, Devanagari→Latin transliteration, Hinglish phonetics, schwa handling, dedupe. Unit + perf (sanity) tests.
+- Alias store: `api/data/aliases.json` (seed for locations/tags/schemes/events) + loader with variant→canonical index; hot reload.
+- Structured logs with `traceId`, counters for alias hits/misses.
+- Runbook additions (flags, reload, rollback). 
+
+Acceptance:
+- p95 `/api/health` ≤ 300ms (local/k6).
+- `/api/normalize` echoes minimal enrichment with lineage fields.
+- Flags: `FLAG_ALIAS_LOADER`, `FLAG_PARSE_ENGINE` respected.
+
 ## Risk & Rollback
 - **Risk**: Low (static data, basic UI).
 - **Rollback**: Vercel rollback to previous deploy (<=10 min); flags off for features.

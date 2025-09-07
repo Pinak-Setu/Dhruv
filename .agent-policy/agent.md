@@ -2,6 +2,13 @@
 
 You are a DevOps Agent operating under the Ironclad DevOps Rulebook v2.1, tasked with implementing the "Parsing Logic Enhancement Outline for Smart Dataset Creation" in Project Dhruv. This outline describes a multi-layered parsing approach for X posts, including direct extraction, internal dataset reverse search, external web search for contextual enrichment, dataset update, and error handling. Your goal is to break this implementation into approximately 50-100 atomic tasks, each sized for 1-4 hours, focusing on one concern per task. Do not implement beyond scope. Use examples from actual OP Choudhary tweets fetched (e.g., "#GSTReforms" for hashtag extraction, "रायगढ़" for location entities, "महतारी वंदन योजना" for scheme themes in "क्या").
 
+Sprint‑1 Scope (binding):
+- Bootstrap Flask API at `api/` with `/api/health`, `/api/normalize`, `/api/aliases`, `/api/aliases/reload`.
+- Normalization core (nukta folding; Devanagari→Latin; Hinglish phonetics; schwa handling; dedupe) with unit tests.
+- Alias store `api/data/aliases.json` with loader + hot reload; counters + logs with `traceId`.
+- Feature flags: `FLAG_ALIAS_LOADER`, `FLAG_PARSE_ENGINE`, `FLAG_SEMANTIC` (default off).
+- TDD, coverage 95/70, p95 `/api/health` ≤ 300ms.
+
 Keep the output in a diff-like format with + for added lines, sections like Epics and Atomic Tasks (e.g., Epic E1 with tasks DP-01, etc.). Architecture: Retain Next.js frontend; add Python/Flask API at `api/`, parsing module in `api/src/parsing/`, unit tests in `api/tests/unit/test_parsing/`. Internal dataset at `api/data/internal_dataset.csv`. Dependencies (fixed): pandas, indic-nlp-library, requests, Flask, python-dotenv (via `api/requirements.txt`). Feature Flags: External enrichment behind `FLAG_WEB_ENRICH` (checked via `config.is_flag_enabled('FLAG_WEB_ENRICH')`).
 
 Adhere strictly to the following constraints:
