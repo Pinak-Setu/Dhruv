@@ -18,12 +18,11 @@ describe('Dashboard date range filter', () => {
     const after = within(tbody).getAllByRole('row').length;
     expect(after).toBeLessThan(before);
 
-    // All remaining rows should be for 05 सितंबर 2025
+    // All remaining rows should be for 05 सितंबर 2025 (prefix may include day name)
     const rows = within(tbody).getAllByRole('row');
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
-      expect(cells[0].textContent || '').toMatch(/^05 सितंबर 2025/);
+      expect(cells[0].textContent || '').toMatch(/05 सितंबर 2025/);
     }
   });
 });
-

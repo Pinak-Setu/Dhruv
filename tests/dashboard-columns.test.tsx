@@ -9,9 +9,9 @@ describe('Dashboard columns behavior', () => {
     expect(screen.getAllByText('—').length).toBeGreaterThan(0);
   });
 
-  it('truncates the "कैसे" column to 80 chars and exposes full text in title', () => {
+  it('truncates the "विवरण" column to 80 chars and exposes full text in title', () => {
     render(<Dashboard />);
-    const howCells = screen.getAllByLabelText('कैसे');
+    const howCells = screen.getAllByLabelText('विवरण');
     expect(howCells.length).toBeGreaterThan(0);
     const sample = howCells[0] as HTMLElement;
     const text = sample.textContent ?? '';
@@ -20,4 +20,3 @@ describe('Dashboard columns behavior', () => {
     expect(title.length).toBeGreaterThanOrEqual(text.length);
   });
 });
-

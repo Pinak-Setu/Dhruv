@@ -150,26 +150,26 @@ export default function Dashboard() {
       <table aria-label="गतिविधि सारणी" className="min-w-full border-collapse">
         <thead>
           <tr>
-            <th className="text-left p-2 border-b">कब</th>
-            <th className="text-left p-2 border-b">कहाँ</th>
-            <th className="text-left p-2 border-b">क्या</th>
+            <th className="text-left p-2 border-b">दिन / दिनांक</th>
+            <th className="text-left p-2 border-b">स्थान</th>
+            <th className="text-left p-2 border-b">दौरा / कार्यक्रम</th>
             <th className="text-left p-2 border-b">कौन/टैग</th>
-            <th className="text-left p-2 border-b">कैसे</th>
+            <th className="text-left p-2 border-b">विवरण</th>
           </tr>
         </thead>
         <tbody data-testid="tbody">
           {filtered.map((row) => (
             <tr key={row.id} role="row" className="align-top">
               <td className="p-2 border-b whitespace-nowrap">{row.when}</td>
-              <td className="p-2 border-b" aria-label="कहाँ">{row.where.join(', ') || '—'}</td>
-              <td className="p-2 border-b" aria-label="क्या">{row.what.join(', ') || '—'}</td>
+              <td className="p-2 border-b" aria-label="स्थान">{row.where.join(', ') || '—'}</td>
+              <td className="p-2 border-b" aria-label="दौरा / कार्यक्रम">{row.what.join(', ') || '—'}</td>
               <td className="p-2 border-b" aria-label="कौन/टैग">
                 {[...row.which.mentions, ...row.which.hashtags].join(' ') || '—'}
               </td>
               {(() => {
                 const t = truncate(row.how, 80);
                 return (
-                  <td className="p-2 border-b" aria-label="कैसे" title={t.title}>
+                  <td className="p-2 border-b" aria-label="विवरण" title={t.title}>
                     {t.display}
                   </td>
                 );
