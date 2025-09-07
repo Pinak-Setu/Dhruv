@@ -57,10 +57,13 @@ export default function Dashboard() {
       rows = rows.filter((r) => r.where.some((w) => matchTextFlexible(w, q)));
     }
     if (tagFilter.trim()) {
-      const q = tagFilter.trim();
+      const tokens = tagFilter
+        .split(/[#,\s]+/)
+        .map((t) => t.trim())
+        .filter(Boolean);
       rows = rows.filter((r) => {
         const tags = [...r.which.hashtags, ...r.which.mentions];
-        return tags.some((t) => t.includes(q));
+        return tokens.some((q) => tags.some((t) => matchTagFlexible(t, q)));
       });
     }
     if (actionFilter.trim()) {
@@ -82,7 +85,7 @@ export default function Dashboard() {
       });
     }
     return rows;
-  }, [parsed, locFilter, fromDate, toDate]);
+  }, [parsed, locFilter, tagFilter, actionFilter, fromDate, toDate]);
 
   return (
     <section className="p-4">

@@ -86,7 +86,28 @@ function collapseVariants(lat: string) {
   const jToZ = lat.replace(/j/g, 'z');
   const zToJCollapsed = zToJ.replace(/aa/g, 'a');
   const jToZCollapsed = jToZ.replace(/aa/g, 'a');
-  return new Set([lat, collapsed, zToJ, jToZ, zToJCollapsed, jToZCollapsed]);
+  // Additional phonetic loosening for Hinglish
+  const loosen = (s: string) =>
+    s
+      .replace(/chh/g, 'ch')
+      .replace(/sh/g, 's')
+      .replace(/th/g, 't')
+      .replace(/dh/g, 'd')
+      .replace(/ph/g, 'f')
+      .replace(/ee/g, 'i')
+      .replace(/ii/g, 'i')
+      .replace(/oo/g, 'u')
+      .replace(/uu/g, 'u');
+  const vSwap = (s: string) => s.replace(/v/g, 'w');
+  const wSwap = (s: string) => s.replace(/w/g, 'v');
+  const dedupe = (s: string) => s.replace(/(.)\1+/g, '$1');
+  const base = [lat, collapsed, zToJ, jToZ, zToJCollapsed, jToZCollapsed];
+  const out = new Set<string>();
+  for (const b of base) {
+    const lst = [b, loosen(b), vSwap(b), wSwap(b), dedupe(b), dedupe(loosen(b))];
+    for (const x of lst) out.add(x);
+  }
+  return out;
 }
 
 export function buildSearchKeys(raw: string): Set<string> {
