@@ -43,8 +43,9 @@ def normalize_tokens(text: str, tokens: List[str]) -> Dict[str, List[str]]:
     if not base:
       continue
     d = fold_nukta(base)
+    base_lc = base.lower()
     lat = translit_basic(d)
-    lat2 = loosen_hinglish(lat)
-    normalized[base] = list({base, d, lat, lat2})
+    lat_lc = lat.lower()
+    lat2 = loosen_hinglish(lat_lc)
+    normalized[base] = list({base, base_lc, d, lat_lc, lat2})
   return normalized
-
