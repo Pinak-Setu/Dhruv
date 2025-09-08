@@ -33,25 +33,17 @@ jobs:
 
   api-tests:
     runs-on: ubuntu-latest
-    services:
-      milvus:
-        image: milvusdb/milvus:latest
-        ports:
-          - 19530:19530
-        options: >-
-          --health-cmd "milvus health"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 5
-      ollama:
-        image: ollama/ollama
-        ports:
-          - 11434:11434
-        options: >-
-          --health-cmd "curl -f http://localhost:11434/api/tags"
-          --health-interval 10s
-          --health-timeout 10s
-          --health-retries 5
+    steps:
+    - name: Start Milvus
+      run: docker run -d --name milvus -p 19530:19530 milvusdb/milvus:latest milvus run standalone
+    - name: Wait for Milvus
+      run: timeout 300 bash -c 'until curl -f http://localhost:19530/health >/dev/null 2>&1; do sleep 5; done' || true
+    - name: Start Ollama
+      run: docker run -d --name ollama -p 11434:11434 ollama/ollama
+    - name: Pull Ollama model
+      run: timeout 300 bash -c 'docker exec ollama ollama pull gemma2:2b' || true
+    - name: Wait for Ollama
+      run: timeout 60 bash -c 'until curl -f http://localhost:11434/api/tags >/dev/null 2>&1; do sleep 5; done' || true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
