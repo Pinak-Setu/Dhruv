@@ -1,6 +1,8 @@
 type Post = { id: string | number; timestamp: string; content: string };
 
 type ParseResult = {
+  id: string | number;
+  ts: string;
   when: string;
   where: string[];
   what: string[];
