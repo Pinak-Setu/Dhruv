@@ -43,6 +43,21 @@ def loosen_hinglish(s: str) -> str:
   )
 
 
+def expand_hinglish_variants(s: str) -> Set[str]:
+  out: Set[str] = {s}
+  # v/w swaps
+  out.add(s.replace('v', 'w'))
+  out.add(s.replace('w', 'v'))
+  # chch -> chh/ch
+  out.add(s.replace('chch', 'chh'))
+  out.add(s.replace('chch', 'ch'))
+  # also chain with swaps
+  for v in list(out):
+    out.add(v.replace('v', 'w'))
+    out.add(v.replace('w', 'v'))
+  return out
+
+
 def schwa_variants(lat: str) -> Set[str]:
   out: Set[str] = {lat}
   if lat.endswith('a'):
@@ -62,6 +77,8 @@ def normalize_tokens(text: str, tokens: List[str]) -> Dict[str, List[str]]:
     lat = translit_basic(d).lower()
     lat2 = loosen_hinglish(lat)
     variants: Set[str] = {base, base.lower(), d, lat, lat2}
+    variants |= expand_hinglish_variants(lat)
+    variants |= expand_hinglish_variants(lat2)
     variants |= schwa_variants(lat)
     variants |= schwa_variants(lat2)
     variants |= {re.sub(r'(.)\1+', r'\1', v) for v in list(variants)}
