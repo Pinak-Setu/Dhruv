@@ -2,7 +2,7 @@ name: Ironclad CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/langextract-milvus-engine]
   pull_request:
     branches: [main]
 

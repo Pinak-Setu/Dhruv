@@ -1,5 +1,5 @@
 'use client';
-import posts from '../../data/posts.json';
+import posts from '../../data/posts_new.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
 import { isParseEnabled } from '../../config/flags';
 import { isCanonicalEnabled } from '../../config/flags';
@@ -53,6 +53,7 @@ export default function Dashboard() {
             what: [] as string[],
             which: { mentions: [] as string[], hashtags: [] as string[] },
             how: p.content,
+            enriched: [] as Array<{ tag: string; domain: 'tags' | 'locations'; canonical: string }>,
           };
         }),
       );
@@ -68,7 +69,7 @@ export default function Dashboard() {
     let rows = parsed;
     if (locFilter.trim()) {
       const q = locFilter.trim();
-      rows = rows.filter((r) => r.where?.some((w) => matchTextFlexible(w, q)));
+      rows = rows.filter((r) => r.where?.some((w: string) => matchTextFlexible(w, q)));
     }
     if (tagFilter.trim()) {
       const tokens = tagFilter
