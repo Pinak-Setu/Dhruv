@@ -92,6 +92,15 @@ export function parsePost(post: Post) {
   }
 
   const hashtags = Array.from(hashtagsSet);
+  // Optional enrichment using alias seed JSON (dev-only convenience)
+  let enriched: Array<{ tag: string; domain: 'tags' | 'locations'; canonical: string }> = [];
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { enrichHashtags } = require('@/utils/alias-enrich');
+    enriched = enrichHashtags(hashtags);
+  } catch {
+    // ignore if module not available
+  }
 
   const how = post.content.trim().slice(0, 180);
 
@@ -101,5 +110,6 @@ export function parsePost(post: Post) {
     what,
     which: { mentions, hashtags },
     how,
+    enriched,
   };
 }

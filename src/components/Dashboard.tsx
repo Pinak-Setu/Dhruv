@@ -2,6 +2,7 @@
 import posts from '../../data/posts.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
 import { isParseEnabled } from '../../config/flags';
+import { isCanonicalEnabled } from '../../config/flags';
 import { matchTagFlexible, matchTextFlexible } from '@/utils/tag-search';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -164,7 +165,42 @@ export default function Dashboard() {
               <td className="p-2 border-b" aria-label="स्थान">{row.where.join(', ') || '—'}</td>
               <td className="p-2 border-b" aria-label="दौरा / कार्यक्रम">{row.what.join(', ') || '—'}</td>
               <td className="p-2 border-b" aria-label="कौन/टैग">
-                {[...row.which.mentions, ...row.which.hashtags].join(' ') || '—'}
+                {(() => {
+                  const tags = [...row.which.mentions, ...row.which.hashtags];
+                  if (!tags.length) return '—';
+                  const showCanonical = isCanonicalEnabled();
+                  const enriched: Array<{ tag: string; domain: 'tags' | 'locations'; canonical: string }> =
+                    (row as any).enriched || [];
+                  const map = new Map<string, { domain: 'tags' | 'locations'; canonical: string }>();
+                  for (const e of enriched) {
+                    map.set(String(e.tag).replace(/^[#@]/, '').toLowerCase(), { domain: e.domain, canonical: e.canonical });
+                  }
+                  return (
+                    <span>
+                      {tags.map((t: string, i: number) => {
+                        const sep = i > 0 ? ' ' : '';
+                        const key = t.replace(/^[#@]/, '').toLowerCase();
+                        const hit = showCanonical ? map.get(key) : undefined;
+                        return (
+                          <span key={`${t}-${i}`}>
+                            {sep}
+                            <span>{t}</span>
+                            {hit ? (
+                              <span
+                                data-testid="canonical-badge"
+                                className="ml-2 text-[10px] px-1.5 py-0.5 rounded border bg-gray-50 text-gray-700 align-middle"
+                                title={`Canonical: ${hit.canonical} [${hit.domain}]`}
+                                aria-label={`Canonical: ${hit.canonical} (${hit.domain})`}
+                              >
+                                {hit.canonical}
+                              </span>
+                            ) : null}
+                          </span>
+                        );
+                      })}
+                    </span>
+                  );
+                })()}
               </td>
               {(() => {
                 const t = truncate(row.how, 80);

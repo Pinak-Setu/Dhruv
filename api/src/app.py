@@ -7,6 +7,7 @@ from flask import Flask, jsonify, request
 from .parsing.normalization import normalize_tokens
 from .parsing.alias_loader import load_aliases, AliasIndex
 from .metrics import inc, snapshot as metrics_snapshot
+from .dataset import get_dataset
 
 
 ALIAS_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'aliases.json')
@@ -123,6 +124,23 @@ def create_app() -> Flask:
   @app.get('/api/metrics')
   def metrics():
     return jsonify(metrics_snapshot())
+
+  @app.get('/api/dataset/lookup')
+  def dataset_lookup():
+    q = (request.args.get('q') or '').strip()
+    if not q:
+      return jsonify({'error': 'missing q'}), 400
+    ds = get_dataset()
+    rec = ds.lookup(q)
+    if not rec:
+      return jsonify({'found': False}), 404
+    return jsonify({'found': True, 'record': {
+      'id': rec.id,
+      'type': rec.type,
+      'canonical': rec.canonical,
+      'variant': rec.variant,
+      'context': rec.context,
+    }})
   return app
 
 
