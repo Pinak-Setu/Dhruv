@@ -10,9 +10,7 @@ import type { Route } from 'next';
 
 type Post = { id: string | number; timestamp: string; content: string };
 type ParsedRow = Awaited<ReturnType<typeof parsePost>>;
-
 export default function Dashboard() {
-  const [parsed, setParsed] = useState<ParsedRow[]>([]);
   const [locFilter, setLocFilter] = useState('');
   const [tagFilter, setTagFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
@@ -35,6 +33,7 @@ export default function Dashboard() {
     setActionFilter(action);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+  const [parsed, setParsed] = useState<any[]>([]);
 
   // Load parsed data asynchronously
   useEffect(() => {
@@ -69,26 +68,26 @@ export default function Dashboard() {
     let rows = parsed;
     if (locFilter.trim()) {
       const q = locFilter.trim();
-      rows = rows.filter((r) => r.where?.some((w: string) => matchTextFlexible(w, q)));
+      rows = rows.filter((r: any) => r.where?.some((w: string) => matchTextFlexible(w, q)));
     }
     if (tagFilter.trim()) {
       const tokens = tagFilter
         .split(/[#,\s]+/)
         .map((t) => t.trim())
         .filter(Boolean);
-      rows = rows.filter((r) => {
+      rows = rows.filter((r: any) => {
         const tags = [...(r.which?.hashtags || []), ...(r.which?.mentions || [])];
-        return tokens.some((q) => tags.some((t) => matchTagFlexible(t, q)));
+        return tokens.some((q) => tags.some((t: string) => matchTagFlexible(t, q)));
       });
     }
     if (actionFilter.trim()) {
       const q = actionFilter.trim();
-      rows = rows.filter((r) => r.what?.some((w: string) => w.includes(q)));
+      rows = rows.filter((r: any) => r.what?.some((w: string) => w.includes(q)));
     }
     const from = fromDate ? new Date(fromDate) : null;
     const to = toDate ? new Date(toDate) : null;
     if (from || to) {
-      rows = rows.filter((r) => {
+      rows = rows.filter((r: any) => {
         const d = new Date(r.ts);
         if (from && d < from) return false;
         if (to) {
