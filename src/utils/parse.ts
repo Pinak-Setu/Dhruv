@@ -151,6 +151,8 @@ function fallbackParse(post: Post) {
   const how = post.content.trim().slice(0, 180);
 
   return {
+    id: post.id,
+    ts: post.timestamp,
     when,
     where,
     what,

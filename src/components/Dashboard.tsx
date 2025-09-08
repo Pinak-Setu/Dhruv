@@ -9,7 +9,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 
 type Post = { id: string | number; timestamp: string; content: string };
-type ParsedRow = ReturnType<typeof parsePost> extends Promise<infer T> ? T : never;
+type ParsedRow = Awaited<ReturnType<typeof parsePost>>;
 
 export default function Dashboard() {
   const [parsed, setParsed] = useState<ParsedRow[]>([]);
@@ -43,7 +43,7 @@ export default function Dashboard() {
         (posts as Post[]).map(async (p) => {
           if (isParseEnabled()) {
             const parsedData = await parsePost(p);
-            return { id: p.id, ts: p.timestamp, ...parsedData };
+            return parsedData as ParsedRow;
           }
           return {
             id: p.id,
@@ -83,7 +83,7 @@ export default function Dashboard() {
     }
     if (actionFilter.trim()) {
       const q = actionFilter.trim();
-      rows = rows.filter((r) => r.what?.some((w) => w.includes(q)));
+      rows = rows.filter((r) => r.what?.some((w: string) => w.includes(q)));
     }
     const from = fromDate ? new Date(fromDate) : null;
     const to = toDate ? new Date(toDate) : null;
