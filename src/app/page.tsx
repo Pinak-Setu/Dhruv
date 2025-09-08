@@ -10,7 +10,9 @@ export default function Home() {
           श्री ओपी चौधरी - सोशल मीडिया एनालिटिक्स डैशबोर्ड
         </h1>
       </header>
-      <Dashboard />
+      <Suspense fallback={<div className="text-center p-8">Loading…</div>}>
+        <Dashboard />
+      </Suspense>
       <Metrics />
     </main>
   );
