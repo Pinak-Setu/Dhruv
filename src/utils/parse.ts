@@ -1,5 +1,14 @@
 type Post = { id: string | number; timestamp: string; content: string };
 
+type ParseResult = {
+  when: string;
+  where: string[];
+  what: string[];
+  which: { mentions: string[]; hashtags: string[] };
+  how: string;
+  enriched?: Array<{ tag: string; domain: 'tags' | 'locations'; canonical: string }>;
+};
+
 const MONTHS_HI = [
   'जनवरी',
   'फ़रवरी',
@@ -57,7 +66,7 @@ const NOUN_TAG_KEYWORDS = ['किसान', 'सड़क', 'शिविर',
 // Check FLAG_LANGEXTRACT
 const FLAG_LANGEXTRACT = process.env.FLAG_LANGEXTRACT === 'on' || true; // default on for branch
 
-export async function parsePost(post: Post) {
+export async function parsePost(post: Post): Promise<ParseResult> {
   if (FLAG_LANGEXTRACT) {
     try {
       // Call Flask API /api/parse
