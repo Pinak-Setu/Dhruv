@@ -8,3 +8,7 @@ audit.json
 .env*
 out
 dist
+
+# Python virtualenv
+api/.venv/
+.venv/
