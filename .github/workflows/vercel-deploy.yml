@@ -41,3 +41,13 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Update Project Board - Deployed
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
+        env:
+          GH_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
+          PROJECT_OWNER: Pinak-Setu
+          PROJECT_NUMBER: "4"
+          ISSUE_LABEL: Task
+        run: |
+          echo "Production deployment completed - updating project board"
+          node scripts/move-to-deployed.js || echo "Project board update skipped (missing scopes or config)"
