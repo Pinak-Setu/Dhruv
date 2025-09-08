@@ -1,11 +1,3 @@
-<file_path>
-Project_Dhruv/src/components/Review.tsx
-</file_path>
-
-<edit_description>
-Create enhanced Review component with filters and export.
-</edit_description>
-
 "use client";
 import { useState, useEffect } from 'react';
 
