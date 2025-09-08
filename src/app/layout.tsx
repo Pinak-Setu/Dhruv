@@ -2,8 +2,8 @@ import './globals.css';
 import type { ReactNode } from 'react';
 
 export const metadata = {
-  title: 'Project Dhruv Dashboard',
-  description: 'Functional dashboard in Hindi (Devanagari)',
+  title: 'श्री ओपी चौधरी - सोशल मीडिया एनालिटिक्स डैशबोर्ड',
+  description: 'सोशल मीडिया पोस्ट्स का विश्लेषण (देवनागरी)',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

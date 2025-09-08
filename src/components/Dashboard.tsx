@@ -1,5 +1,5 @@
 "use client";
-import posts from '../../data/posts.json';
+import posts from '../../data/posts_new.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
 import { isParseEnabled } from '../../config/flags';
 import { matchTagFlexible, matchTextFlexible } from '@/utils/tag-search';
