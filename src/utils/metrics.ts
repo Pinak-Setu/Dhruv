@@ -1,5 +1,5 @@
-import posts from '../../data/posts.json';
-import { parsePost } from '@/utils/parse';
+import posts from '../../data/posts_new.json';
+// Lightweight parsing for metrics (sync, avoids async parsePost)
 
 type CountMap = Record<string, number>;
 
@@ -19,9 +19,34 @@ function topN(map: CountMap, n: number): Array<{ key: string; count: number }> {
     .map(([key, count]) => ({ key, count }));
 }
 
+const PLACE_REGEX = /(नई दिल्ली|नयी दिल्ली|रायगढ़|दिल्ली|रायपुर|भारत|छत्तीसगढ़|खरसिया|गढ़ उमरिया|बस्तर|सरगुजा|जशपुर|बगीचा)/g;
+const ACTION_KEYWORDS = [
+  'बैठक',
+  'समापन',
+  'शिलान्यास',
+  'निरीक्षण',
+  'भूमिपूजन',
+  'उद्घाटन',
+  'संवाद',
+  'जन्मदिन',
+  'स्वागत',
+  'नमन',
+  'प्रार्थना',
+  'शुभकामनायें',
+  'लोकार्पण',
+  'समीक्षा',
+  'समारोह',
+  'सम्मिलित',
+];
+
 export function computeMetrics() {
   const parsed = (posts as Array<{ id: string | number; timestamp: string; content: string }>).map(
-    (p) => parsePost(p),
+    (p) => {
+      const where = Array.from(new Set(p.content.match(PLACE_REGEX) || []));
+      const what: string[] = [];
+      for (const k of ACTION_KEYWORDS) if (p.content.includes(k)) what.push(k);
+      return { where, what };
+    },
   );
   const allPlaces = parsed.flatMap((p) => p.where);
   const allActions = parsed.flatMap((p) => p.what);

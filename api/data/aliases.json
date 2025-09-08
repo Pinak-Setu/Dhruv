@@ -9,7 +9,9 @@
     "समारोह": {"variants": ["samaroh", "samaroha"], "confidence": 0.9, "source": "seed"},
     "स्वच्छता": {"variants": ["swachhata", "swachhta", "swachata"], "confidence": 0.9, "source": "seed"},
     "स्वास्थ्य": {"variants": ["swasthya"], "confidence": 0.9, "source": "seed"},
-    "उद्यमिता": {"variants": ["udyamita", "udhyamita"], "confidence": 0.9, "source": "seed"}
+    "उद्यमिता": {"variants": ["udyamita", "udhyamita"], "confidence": 0.9, "source": "seed"},
+    "TeachersDay2025": {"variants": ["#TeachersDay2025", "teachersday2025", "teachers day 2025"], "confidence": 0.8, "source": "seed"},
+    "Homestay Policy": {"variants": ["#Homestaypolicy", "homestaypolicy", "homestay policy"], "confidence": 0.7, "source": "seed"}
   },
   "locations": {
     "दिल्ली": {"variants": ["dilli", "new delhi", "नई दिल्ली", "नयी दिल्ली"], "confidence": 0.95, "source": "seed"},
@@ -19,7 +21,11 @@
     "कोलकाता": {"variants": ["kolkata", "calcutta"], "confidence": 0.9, "source": "seed"},
     "बेंगलुरु": {"variants": ["bengaluru", "bangalore"], "confidence": 0.9, "source": "seed"},
     "वाराणसी": {"variants": ["varanasi", "banaras", "benaras"], "confidence": 0.9, "source": "seed"},
-    "प्रयागराज": {"variants": ["prayagraj", "allahabad"], "confidence": 0.9, "source": "seed"}
+    "प्रयागराज": {"variants": ["prayagraj", "allahabad"], "confidence": 0.9, "source": "seed"},
+    "बस्तर": {"variants": ["bastar"], "confidence": 0.9, "source": "seed"},
+    "सरगुजा": {"variants": ["sarguja", "surguja"], "confidence": 0.9, "source": "seed"},
+    "जशपुर": {"variants": ["jashpur"], "confidence": 0.9, "source": "seed"},
+    "छत्तीसगढ़": {"variants": ["chhattisgarh", "chattisgarh", "cg"], "confidence": 0.8, "source": "seed"},
+    "भारत": {"variants": ["bharat", "india"], "confidence": 0.8, "source": "seed"}
   }
 }
-

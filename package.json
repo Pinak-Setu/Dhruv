@@ -1,6 +1,7 @@
 {
+  "_comment": "CI trigger - added for deployment fix",
   "name": "project-dhruv",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Project Dhruv dashboard (Next.js, TypeScript, Tailwind, TDD)",
   "scripts": {
@@ -18,7 +19,8 @@
     "ci:status": "./scripts/ci-status-table.sh",
     "deploy": "vercel --prod",
     "project:deployed": "node scripts/update-project-board.js",
-    "project:move": "node scripts/move-to-deployed.js"
+    "project:move": "node scripts/move-to-deployed.js",
+    "mine:aliases": "node scripts/mine-aliases.js"
   },
   "dependencies": {
     "next": "^14.2.5",

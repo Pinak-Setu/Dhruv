@@ -7,6 +7,9 @@ from flask import Flask, jsonify, request
 from .parsing.normalization import normalize_tokens
 from .parsing.alias_loader import load_aliases, AliasIndex
 from .metrics import inc, snapshot as metrics_snapshot
+from .dataset import get_dataset
+from .parsing.parser import extract_with_chunking
+from .parsing.hybrid_search import connect_and_load_collection, hybrid_search
 
 
 ALIAS_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'aliases.json')
@@ -45,6 +48,8 @@ def create_app() -> Flask:
       'flags': {
         'FLAG_ALIAS_LOADER': os.getenv('FLAG_ALIAS_LOADER', 'on'),
         'FLAG_PARSE_ENGINE': os.getenv('FLAG_PARSE_ENGINE', 'on'),
+        'FLAG_LANGEXTRACT': os.getenv('FLAG_LANGEXTRACT', 'on'),
+        'FLAG_MILVUS_SEARCH': os.getenv('FLAG_MILVUS_SEARCH', 'on'),
       },
     })
 
@@ -120,9 +125,61 @@ def create_app() -> Flask:
       out.append({'traceId': str(uuid.uuid4()), 'input': {'text': text, 'tokens': tokens}, 'normalized': normalized})
     return jsonify({'items': out})
 
+  @app.post('/api/parse')
+  def parse_post():
+    if os.getenv('FLAG_LANGEXTRACT', 'on') == 'off':
+      return jsonify({'error': 'LangExtract engine disabled'}), 400
+    payload = request.get_json(silent=True) or {}
+    text = (payload.get('text') or '').strip()
+    if not text:
+      return jsonify({'error': 'missing text'}), 400
+    result = extract_with_chunking(text)
+    return jsonify({
+      'traceId': str(uuid.uuid4()),
+      'input': {'text': text},
+      'extraction': result,
+    })
+
+  @app.post('/api/query')
+  def query_posts():
+    if os.getenv('FLAG_MILVUS_SEARCH', 'on') == 'off':
+      return jsonify({'error': 'Milvus search disabled'}), 400
+    payload = request.get_json(silent=True) or {}
+    query_text = (payload.get('query') or '').strip()
+    filter_expr = payload.get('filter', '')
+    top_k = int(payload.get('top_k', 10))
+    if not query_text:
+      return jsonify({'error': 'missing query'}), 400
+    collection = connect_and_load_collection()
+    results = hybrid_search(collection, query_text, filter_expr, top_k)
+    return jsonify({
+      'traceId': str(uuid.uuid4()),
+      'query': query_text,
+      'filter': filter_expr,
+      'top_k': top_k,
+      'results': results,
+    })
+
   @app.get('/api/metrics')
   def metrics():
     return jsonify(metrics_snapshot())
+
+  @app.get('/api/dataset/lookup')
+  def dataset_lookup():
+    q = (request.args.get('q') or '').strip()
+    if not q:
+      return jsonify({'error': 'missing q'}), 400
+    ds = get_dataset()
+    rec = ds.lookup(q)
+    if not rec:
+      return jsonify({'found': False}), 404
+    return jsonify({'found': True, 'record': {
+      'id': rec.id,
+      'type': rec.type,
+      'canonical': rec.canonical,
+      'variant': rec.variant,
+      'context': rec.context,
+    }})
   return app
 
 

@@ -1,5 +1,16 @@
 type Post = { id: string | number; timestamp: string; content: string };
 
+type ParseResult = {
+  id: string | number;
+  ts: string;
+  when: string;
+  where: string[];
+  what: string[];
+  which: { mentions: string[]; hashtags: string[] };
+  how: string;
+  enriched?: Array<{ tag: string; domain: 'tags' | 'locations'; canonical: string }>;
+};
+
 const MONTHS_HI = [
   'जनवरी',
   'फ़रवरी',
@@ -28,7 +39,8 @@ export function formatHindiDate(iso: string): string {
 }
 
 // Known places and variants; extendable
-const PLACE_REGEX = /(नई दिल्ली|नयी दिल्ली|रायगढ़|दिल्ली|रायपुर|भारत|छत्तीसगढ़|खरसिया|गढ़ उमरिया|बस्तर|सरगुजा|जशपुर|बगीचा)/g;
+const PLACE_REGEX =
+  /(नई दिल्ली|नयी दिल्ली|रायगढ़|दिल्ली|रायपुर|भारत|छत्तीसगढ़|खरसिया|गढ़ उमरिया|बस्तर|सरगुजा|जशपुर|बगीचा)/g;
 const HASHTAG_REGEX = /#[^\s#]+/g;
 const MENTION_REGEX = /@[A-Za-z0-9_]+/g;
 const ACTION_KEYWORDS = [
@@ -51,15 +63,14 @@ const ACTION_KEYWORDS = [
 ];
 
 // Noun/subject keywords to surface also as hashtags from content
-const NOUN_TAG_KEYWORDS = [
-  'किसान',
-  'सड़क',
-  'शिविर',
-  'महिला',
-  'स्टार्टअप',
-];
+const NOUN_TAG_KEYWORDS = ['किसान', 'सड़क', 'शिविर', 'महिला', 'स्टार्टअप'];
 
-export function parsePost(post: Post) {
+// Synchronous parse: prefer local heuristics for reliability in tests/builds
+export function parsePost(post: Post): ParseResult {
+  return fallbackParse(post);
+}
+
+function fallbackParse(post: Post) {
   const when = formatHindiDate(post.timestamp);
   const whereSet = new Set<string>();
   // Direct matches from known list
@@ -92,14 +103,26 @@ export function parsePost(post: Post) {
   }
 
   const hashtags = Array.from(hashtagsSet);
+  // Optional enrichment using alias seed JSON (dev-only convenience)
+  let enriched: Array<{ tag: string; domain: 'tags' | 'locations'; canonical: string }> = [];
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { enrichHashtags } = require('@/utils/alias-enrich');
+    enriched = enrichHashtags(hashtags);
+  } catch {
+    // ignore if module not available
+  }
 
   const how = post.content.trim().slice(0, 180);
 
   return {
+    id: post.id,
+    ts: post.timestamp,
     when,
     where,
     what,
     which: { mentions, hashtags },
     how,
+    enriched,
   };
 }
