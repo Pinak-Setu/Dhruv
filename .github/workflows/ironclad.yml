@@ -41,7 +41,7 @@ jobs:
     - name: Start Ollama
       run: docker run -d --name ollama -p 11434:11434 ollama/ollama
     - name: Pull Ollama model
-      run: timeout 300 bash -c 'docker exec ollama ollama pull gemma2:2b' || true
+      run: timeout 600 bash -c 'docker exec ollama ollama pull gemma2:2b' || true
     - name: Wait for Ollama
       run: timeout 60 bash -c 'until curl -f http://localhost:11434/api/tags >/dev/null 2>&1; do sleep 5; done' || true
     steps:
