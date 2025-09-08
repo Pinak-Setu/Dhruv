@@ -43,6 +43,15 @@ jobs:
           --health-interval 30s
           --health-timeout 10s
           --health-retries 5
+      ollama:
+        image: ollama/ollama
+        ports:
+          - 11434:11434
+        options: >-
+          --health-cmd "curl -f http://localhost:11434/api/tags"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -52,9 +61,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r api/requirements.txt pytest
+      - name: Pull Ollama model
+        run: |
+          curl -X POST http://localhost:11434/api/pull -H "Content-Type: application/json" -d '{"name": "gemma2:2b"}'
+          sleep 10  # Wait for pull
       - name: Run API unit tests
         env:
           PYTHONPATH: .
+          OLLAMA_BASE_URL: http://localhost:11434
         run: pytest -q api/tests/unit
 
   coverage-gate:
