@@ -28,7 +28,8 @@ export function formatHindiDate(iso: string): string {
 }
 
 // Known places and variants; extendable
-const PLACE_REGEX = /(नई दिल्ली|नयी दिल्ली|रायगढ़|दिल्ली|रायपुर|भारत|छत्तीसगढ़|खरसिया|गढ़ उमरिया|बस्तर|सरगुजा|जशपुर|बगीचा)/g;
+const PLACE_REGEX =
+  /(नई दिल्ली|नयी दिल्ली|रायगढ़|दिल्ली|रायपुर|भारत|छत्तीसगढ़|खरसिया|गढ़ उमरिया|बस्तर|सरगुजा|जशपुर|बगीचा)/g;
 const HASHTAG_REGEX = /#[^\s#]+/g;
 const MENTION_REGEX = /@[A-Za-z0-9_]+/g;
 const ACTION_KEYWORDS = [
@@ -51,15 +52,60 @@ const ACTION_KEYWORDS = [
 ];
 
 // Noun/subject keywords to surface also as hashtags from content
-const NOUN_TAG_KEYWORDS = [
-  'किसान',
-  'सड़क',
-  'शिविर',
-  'महिला',
-  'स्टार्टअप',
-];
+const NOUN_TAG_KEYWORDS = ['किसान', 'सड़क', 'शिविर', 'महिला', 'स्टार्टअप'];
 
-export function parsePost(post: Post) {
+// Check FLAG_LANGEXTRACT
+const FLAG_LANGEXTRACT = process.env.FLAG_LANGEXTRACT === 'on' || true; // default on for branch
+
+export async function parsePost(post: Post) {
+  if (FLAG_LANGEXTRACT) {
+    try {
+      // Call Flask API /api/parse
+      const response = await fetch('/api/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: post.content }),
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const extraction = data.extraction;
+        return {
+          id: post.id,
+          ts: post.timestamp,
+          when: formatHindiDate(post.timestamp),
+          where:
+            extraction.entities
+              ?.filter((e: any) => e.type === 'LOCATION')
+              .map((e: any) => e.text) || [],
+          what:
+            extraction.entities?.filter((e: any) => e.type === 'EVENT').map((e: any) => e.text) ||
+            [],
+          which: {
+            mentions:
+              extraction.entities
+                ?.filter((e: any) => e.type === 'MENTION')
+                .map((e: any) => e.text) || [],
+            hashtags:
+              extraction.entities?.filter((e: any) => e.type === 'TAG').map((e: any) => e.text) ||
+              [],
+          },
+          how: post.content,
+          enriched: [], // Can add from API if needed
+        };
+      } else {
+        console.error('API error:', response.status);
+        return fallbackParse(post);
+      }
+    } catch (e) {
+      console.error('Fetch failed:', e);
+      return fallbackParse(post);
+    }
+  } else {
+    return fallbackParse(post);
+  }
+}
+
+function fallbackParse(post: Post) {
   const when = formatHindiDate(post.timestamp);
   const whereSet = new Set<string>();
   // Direct matches from known list

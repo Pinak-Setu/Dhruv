@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import posts from '../../data/posts.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
 import { isParseEnabled } from '../../config/flags';
@@ -9,8 +9,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import type { Route } from 'next';
 
 type Post = { id: string | number; timestamp: string; content: string };
+type ParsedRow = ReturnType<typeof parsePost> extends Promise<infer T> ? T : never;
 
 export default function Dashboard() {
+  const [parsed, setParsed] = useState<ParsedRow[]>([]);
   const [locFilter, setLocFilter] = useState('');
   const [tagFilter, setTagFilter] = useState('');
   const [fromDate, setFromDate] = useState('');
@@ -33,20 +35,31 @@ export default function Dashboard() {
     setActionFilter(action);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
-  const parsed = (posts as Post[]).map((p) => {
-    if (isParseEnabled()) {
-      return { id: p.id, ts: p.timestamp, ...parsePost(p) };
-    }
-    return {
-      id: p.id,
-      ts: p.timestamp,
-      when: formatHindiDate(p.timestamp),
-      where: [] as string[],
-      what: [] as string[],
-      which: { mentions: [] as string[], hashtags: [] as string[] },
-      how: p.content,
+
+  // Load parsed data asynchronously
+  useEffect(() => {
+    const loadParsed = async () => {
+      const newParsed = await Promise.all(
+        (posts as Post[]).map(async (p) => {
+          if (isParseEnabled()) {
+            const parsedData = await parsePost(p);
+            return { id: p.id, ts: p.timestamp, ...parsedData };
+          }
+          return {
+            id: p.id,
+            ts: p.timestamp,
+            when: formatHindiDate(p.timestamp),
+            where: [] as string[],
+            what: [] as string[],
+            which: { mentions: [] as string[], hashtags: [] as string[] },
+            how: p.content,
+          };
+        }),
+      );
+      setParsed(newParsed);
     };
-  });
+    loadParsed();
+  }, []);
   const truncate = (s: string, max: number) => {
     if (s.length <= max) return { display: s, title: s };
     return { display: s.slice(0, Math.max(0, max - 1)) + '…', title: s };
@@ -55,7 +68,7 @@ export default function Dashboard() {
     let rows = parsed;
     if (locFilter.trim()) {
       const q = locFilter.trim();
-      rows = rows.filter((r) => r.where.some((w) => matchTextFlexible(w, q)));
+      rows = rows.filter((r) => r.where?.some((w) => matchTextFlexible(w, q)));
     }
     if (tagFilter.trim()) {
       const tokens = tagFilter
@@ -63,13 +76,13 @@ export default function Dashboard() {
         .map((t) => t.trim())
         .filter(Boolean);
       rows = rows.filter((r) => {
-        const tags = [...r.which.hashtags, ...r.which.mentions];
+        const tags = [...(r.which?.hashtags || []), ...(r.which?.mentions || [])];
         return tokens.some((q) => tags.some((t) => matchTagFlexible(t, q)));
       });
     }
     if (actionFilter.trim()) {
       const q = actionFilter.trim();
-      rows = rows.filter((r) => r.what.some((w) => w.includes(q)));
+      rows = rows.filter((r) => r.what?.some((w) => w.includes(q)));
     }
     const from = fromDate ? new Date(fromDate) : null;
     const to = toDate ? new Date(toDate) : null;
@@ -162,18 +175,31 @@ export default function Dashboard() {
           {filtered.map((row) => (
             <tr key={row.id} role="row" className="align-top">
               <td className="p-2 border-b whitespace-nowrap">{row.when}</td>
-              <td className="p-2 border-b" aria-label="स्थान">{row.where.join(', ') || '—'}</td>
-              <td className="p-2 border-b" aria-label="दौरा / कार्यक्रम">{row.what.join(', ') || '—'}</td>
+              <td className="p-2 border-b" aria-label="स्थान">
+                {row.where.join(', ') || '—'}
+              </td>
+              <td className="p-2 border-b" aria-label="दौरा / कार्यक्रम">
+                {row.what.join(', ') || '—'}
+              </td>
               <td className="p-2 border-b" aria-label="कौन/टैग">
                 {(() => {
                   const tags = [...row.which.mentions, ...row.which.hashtags];
                   if (!tags.length) return '—';
                   const showCanonical = isCanonicalEnabled();
-                  const enriched: Array<{ tag: string; domain: 'tags' | 'locations'; canonical: string }> =
-                    (row as any).enriched || [];
-                  const map = new Map<string, { domain: 'tags' | 'locations'; canonical: string }>();
+                  const enriched: Array<{
+                    tag: string;
+                    domain: 'tags' | 'locations';
+                    canonical: string;
+                  }> = (row as any).enriched || [];
+                  const map = new Map<
+                    string,
+                    { domain: 'tags' | 'locations'; canonical: string }
+                  >();
                   for (const e of enriched) {
-                    map.set(String(e.tag).replace(/^[#@]/, '').toLowerCase(), { domain: e.domain, canonical: e.canonical });
+                    map.set(String(e.tag).replace(/^[#@]/, '').toLowerCase(), {
+                      domain: e.domain,
+                      canonical: e.canonical,
+                    });
                   }
                   return (
                     <span>

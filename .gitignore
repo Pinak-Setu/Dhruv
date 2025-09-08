@@ -8,3 +8,6 @@ audit.json
 .env*
 out
 dist
+
+# Temporary data directory for synthetic datasets
+temp_data/
