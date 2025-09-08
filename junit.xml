@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="18" failures="0" errors="0" time="1.389">
+  <testsuite name="Dashboard columns behavior" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:25" time="0.41" tests="2">
+    <testcase classname="Dashboard columns behavior renders placeholder (—) where location or actions are missing" name="Dashboard columns behavior renders placeholder (—) where location or actions are missing" time="0.039">
+    </testcase>
+    <testcase classname="Dashboard columns behavior truncates the &quot;विवरण&quot; column to 80 chars and exposes full text in title" name="Dashboard columns behavior truncates the &quot;विवरण&quot; column to 80 chars and exposes full text in title" time="0.014">
+    </testcase>
+  </testsuite>
+  <testsuite name="Dashboard filter reset" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:26" time="0.117" tests="1">
+    <testcase classname="Dashboard filter reset clears all filters and restores full dataset" name="Dashboard filter reset clears all filters and restores full dataset" time="0.074">
+    </testcase>
+  </testsuite>
+  <testsuite name="Dashboard tag/mention quick filter" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:26" time="0.105" tests="2">
+    <testcase classname="Dashboard tag/mention quick filter filters by hashtag (e.g., #समारोह)" name="Dashboard tag/mention quick filter filters by hashtag (e.g., #समारोह)" time="0.036">
+    </testcase>
+    <testcase classname="Dashboard tag/mention quick filter filters by mention (e.g., @PMOIndia)" name="Dashboard tag/mention quick filter filters by mention (e.g., @PMOIndia)" time="0.023">
+    </testcase>
+  </testsuite>
+  <testsuite name="Dashboard filters" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:26" time="0.071" tests="1">
+    <testcase classname="Dashboard filters filters rows by स्थान (कहाँ)" name="Dashboard filters filters rows by स्थान (कहाँ)" time="0.03">
+    </testcase>
+  </testsuite>
+  <testsuite name="Dashboard date range filter" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:26" time="0.068" tests="1">
+    <testcase classname="Dashboard date range filter filters rows by inclusive date range" name="Dashboard date range filter filters rows by inclusive date range" time="0.029">
+    </testcase>
+  </testsuite>
+  <testsuite name="Dashboard" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:26" time="0.063" tests="1">
+    <testcase classname="Dashboard renders a Hindi table with headers and data" name="Dashboard renders a Hindi table with headers and data" time="0.025">
+    </testcase>
+  </testsuite>
+  <testsuite name="Canonical badges (flagged)" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:26" time="0.063" tests="1">
+    <testcase classname="Canonical badges (flagged) renders canonical badges when NEXT_PUBLIC_FLAG_CANONICAL=on" name="Canonical badges (flagged) renders canonical badges when NEXT_PUBLIC_FLAG_CANONICAL=on" time="0.02">
+    </testcase>
+  </testsuite>
+  <testsuite name="parse places (extended variants)" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:26" time="0.028" tests="2">
+    <testcase classname="parse places (extended variants) extracts multi-word places like नई दिल्ली" name="parse places (extended variants) extracts multi-word places like नई दिल्ली" time="0.001">
+    </testcase>
+    <testcase classname="parse places (extended variants) recognizes छत्तीसगढ़ and भारत mentions" name="parse places (extended variants) recognizes छत्तीसगढ़ and भारत mentions" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="parse util" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:26" time="0.025" tests="2">
+    <testcase classname="parse util formats date to Hindi (Day, DD MMMM YYYY)" name="parse util formats date to Hindi (Day, DD MMMM YYYY)" time="0">
+    </testcase>
+    <testcase classname="parse util extracts where, what, which, how from content" name="parse util extracts where, what, which, how from content" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="parse activities and inferred locations" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:26" time="0.022" tests="3">
+    <testcase classname="parse activities and inferred locations detects activities like शिलान्यास and निरीक्षण" name="parse activities and inferred locations detects activities like शिलान्यास and निरीक्षण" time="0.001">
+    </testcase>
+    <testcase classname="parse activities and inferred locations extracts multi-activity tokens like जन्मदिन, प्रार्थना, शुभकामनायें" name="parse activities and inferred locations extracts multi-activity tokens like जन्मदिन, प्रार्थना, शुभकामनायें" time="0">
+    </testcase>
+    <testcase classname="parse activities and inferred locations captures नई दिल्ली from sentence constructs" name="parse activities and inferred locations captures नई दिल्ली from sentence constructs" time="0">
+    </testcase>
+  </testsuite>
+  <testsuite name="Feature flag: FLAG_PARSE" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:26" time="0.055" tests="1">
+    <testcase classname="Feature flag: FLAG_PARSE when FLAG_PARSE=off, disables extraction (no hashtags) and shows placeholders" name="Feature flag: FLAG_PARSE when FLAG_PARSE=off, disables extraction (no hashtags) and shows placeholders" time="0.016">
+    </testcase>
+  </testsuite>
+  <testsuite name="Frontend alias enrichment (dev)" errors="0" failures="0" skipped="0" timestamp="2025-09-08T18:32:26" time="0.022" tests="1">
+    <testcase classname="Frontend alias enrichment (dev) enriches hashtags like #समारोह to canonical tags" name="Frontend alias enrichment (dev) enriches hashtags like #समारोह to canonical tags" time="0">
+    </testcase>
+  </testsuite>
+</testsuites>

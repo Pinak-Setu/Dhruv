@@ -1,7 +1,7 @@
 'use client';
 import posts from '../../data/posts.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
-import { isParseEnabled } from '../../config/flags';
+import { isParseEnabled, isCanonicalEnabled } from '../../config/flags';
 import { matchTagFlexible, matchTextFlexible } from '@/utils/tag-search';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
