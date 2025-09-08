@@ -6,6 +6,9 @@ import { matchTagFlexible, matchTextFlexible } from '@/utils/tag-search';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import type { Route } from 'next';
+import Card from './Card';
+import SoftButton from './SoftButton';
+import Chip from './Chip';
 
 type Post = { id: string | number; timestamp: string; content: string };
 
@@ -133,10 +136,8 @@ export default function Dashboard() {
             onChange={(e) => setToDate(e.target.value)}
           />
         </label>
-        <button
-          type="button"
-          aria-label="फ़िल्टर साफ़ करें"
-          className="text-sm border border-gray-300 px-3 py-1 rounded-md bg-white hover:bg-gray-100"
+        <SoftButton
+          ariaLabel="फ़िल्टर साफ़ करें"
           onClick={() => {
             setLocFilter('');
             setTagFilter('');
@@ -147,7 +148,7 @@ export default function Dashboard() {
           }}
         >
           फ़िल्टर साफ़ करें
-        </button>
+        </SoftButton>
       </div>
       <div className="overflow-x-auto border rounded-md">
         <table aria-label="गतिविधि सारणी" className="min-w-full text-sm border-collapse">
@@ -166,12 +167,27 @@ export default function Dashboard() {
                 <td className="p-2 border-b whitespace-nowrap">{row.when}</td>
                 <td className="p-2 border-b">{row.where.join(', ') || '—'}</td>
                 <td className="p-2 border-b">{row.what.join(', ') || '—'}</td>
-                <td className="p-2 border-b">
-                  {[...row.which.mentions, ...row.which.hashtags].join(' ') || '—'}
+                <td className="p-2 border-b" aria-label="कौन/टैग">
+                  {(() => {
+                    const tags = [...row.which.mentions, ...row.which.hashtags];
+                    if (!tags.length) return '—';
+                    return (
+                      <div className="flex gap-2 flex-wrap">
+                        {tags.map((t, i) => (
+                          <Chip key={`${t}-${i}`} label={t} />
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </td>
-                <td className="p-2 border-b" title={row.how}>
-                  {row.how}
-                </td>
+                {(() => {
+                  const t = truncate(row.how, 80);
+                  return (
+                    <td className="p-2 border-b" aria-label="विवरण" title={t.title}>
+                      {t.display}
+                    </td>
+                  );
+                })()}
               </tr>
             ))}
           </tbody>

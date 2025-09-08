@@ -8,7 +8,16 @@ type CardProps = {
 };
 
 export default function Card({ children, className, as: Tag = 'div' }: CardProps) {
-  return <Tag className={["card-soft", className || ''].join(' ').trim()}>{children}</Tag>;
+  return (
+    <Tag
+      className={[
+        'bg-white border border-gray-200 rounded-xl shadow-[0_4px_20px_rgba(16,24,40,0.06)]',
+        className || '',
+      ].join(' ').trim()}
+    >
+      {children}
+    </Tag>
+  );
 }
 
 

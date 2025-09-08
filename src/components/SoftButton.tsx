@@ -14,8 +14,10 @@ export default function SoftButton({ children, onClick, disabled, className, ari
     <button
       type="button"
       className={[
-        'btn-soft',
-        'text-sm',
+        'inline-flex items-center gap-2 px-3.5 py-2 text-sm',
+        'rounded-full border border-gray-200',
+        'bg-green-50 hover:bg-green-100 text-slate-900',
+        'disabled:opacity-60 disabled:cursor-not-allowed',
         className || '',
       ].join(' ').trim()}
       onClick={onClick}

@@ -14,9 +14,9 @@ export default function Chip({ label, selected, icon, onClick, className }: Chip
     <button
       type="button"
       className={[
-        'chip',
-        selected ? 'chip--active' : '',
-        'text-sm',
+        'inline-flex items-center gap-1.5 px-2.5 py-1 text-sm',
+        'rounded-full border',
+        selected ? 'bg-blue-100 text-blue-900 border-blue-200' : 'bg-slate-100 text-slate-900 border-gray-200',
         className || '',
       ].join(' ').trim()}
       onClick={onClick}
