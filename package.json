@@ -1,7 +1,7 @@
 {
   "_comment": "CI trigger - added for deployment fix",
   "name": "project-dhruv",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Project Dhruv dashboard (Next.js, TypeScript, Tailwind, TDD)",
   "scripts": {
