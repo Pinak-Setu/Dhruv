@@ -1,13 +1,27 @@
 import os
 import json
 import uuid
+import hashlib
+import time
 from flask import Flask, jsonify, request
 from .parsing.normalization import normalize_tokens
 from .parsing.alias_loader import load_aliases, AliasIndex
+from .metrics import inc, snapshot as metrics_snapshot
 
 
 ALIAS_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'aliases.json')
 _ALIASES: AliasIndex | None = None
+_ALIASES_ETAG: str | None = None
+
+
+def _update_etag():
+  global _ALIASES_ETAG
+  try:
+    with open(ALIAS_PATH, 'rb') as f:
+      data = f.read()
+    _ALIASES_ETAG = hashlib.md5(data).hexdigest()
+  except Exception:
+    _ALIASES_ETAG = None
 
 
 def _ensure_aliases():
@@ -15,6 +29,7 @@ def _ensure_aliases():
   if _ALIASES is None and os.getenv('FLAG_ALIAS_LOADER', 'on') != 'off':
     try:
       _ALIASES = load_aliases(ALIAS_PATH)
+      _update_etag()
     except Exception:
       _ALIASES = None
 
@@ -42,6 +57,7 @@ def create_app() -> Flask:
     _ensure_aliases()
     # Build alias matches with lineage
     alias_hits = []
+    inc('normalize_calls_total')
     if _ALIASES is not None:
       for original, variants in result.items():
         for v in variants:
@@ -56,7 +72,10 @@ def create_app() -> Flask:
               'confidence': payload.get('confidence', 1.0),
               'source': payload.get('source', 'manual'),
             })
-
+    if alias_hits:
+      inc('alias_hits_total', by=len(alias_hits))
+    else:
+      inc('alias_misses_total')
     return jsonify({
       'traceId': str(uuid.uuid4()),
       'input': {'text': text, 'tokens': tokens},
@@ -69,8 +88,12 @@ def create_app() -> Flask:
   def get_aliases():
     _ensure_aliases()
     if _ALIASES is None:
-      return jsonify({'version': None, 'aliases': {}})
-    return jsonify({'version': _ALIASES.version, 'tags': _ALIASES.tags, 'locations': _ALIASES.locations})
+      resp = jsonify({'version': None, 'aliases': {}})
+    else:
+      resp = jsonify({'version': _ALIASES.version, 'tags': _ALIASES.tags, 'locations': _ALIASES.locations})
+    if _ALIASES_ETAG:
+      resp.headers['ETag'] = _ALIASES_ETAG
+    return resp
 
   @app.post('/api/aliases/reload')
   def reload_aliases():
@@ -79,10 +102,27 @@ def create_app() -> Flask:
     try:
       global _ALIASES
       _ALIASES = load_aliases(ALIAS_PATH)
-      return jsonify({'reloaded': True, 'version': _ALIASES.version, 'traceId': str(uuid.uuid4())})
+      _update_etag()
+      return jsonify({'reloaded': True, 'version': _ALIASES.version, 'updatedAt': int(time.time()), 'traceId': str(uuid.uuid4())})
     except Exception as e:
       return jsonify({'reloaded': False, 'error': str(e)}), 500
 
+  @app.post('/api/normalize/batch')
+  def normalize_batch():
+    payload = request.get_json(silent=True) or {}
+    items = payload.get('items') or []
+    out = []
+    for it in items:
+      text = (it.get('text') or '').strip()
+      tokens = it.get('tokens') or []
+      normalized = normalize_tokens(text=text, tokens=tokens)
+      inc('normalize_calls_total')
+      out.append({'traceId': str(uuid.uuid4()), 'input': {'text': text, 'tokens': tokens}, 'normalized': normalized})
+    return jsonify({'items': out})
+
+  @app.get('/api/metrics')
+  def metrics():
+    return jsonify(metrics_snapshot())
   return app
 
 

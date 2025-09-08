@@ -49,8 +49,12 @@ def validate_aliases(data: Dict[str, Any]) -> Tuple[bool, str]:
                 return False, f'{domain}.{canonical}.variants missing'
             if not isinstance(payload['variants'], list):
                 return False, f'{domain}.{canonical}.variants not list'
-            if 'confidence' in payload and not isinstance(payload['confidence'], (int, float)):
-                return False, f'{domain}.{canonical}.confidence not number'
+            if 'confidence' in payload:
+                c = payload['confidence']
+                if not isinstance(c, (int, float)):
+                    return False, f'{domain}.{canonical}.confidence not number'
+                if not (0 <= float(c) <= 1):
+                    return False, f'{domain}.{canonical}.confidence out of range'
     return True, 'ok'
 
 
