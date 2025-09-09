@@ -95,7 +95,7 @@ export default function Dashboard() {
 
   return (
     <section>
-      <div className="mb-4 flex items-end gap-4 flex-wrap bg-gray-50 p-3 rounded-md border">
+      <div className="mb-4 flex items-end gap-4 flex-wrap card-soft p-4">
         <label className="text-sm font-medium">
           स्थान फ़िल्टर
           <input
@@ -150,15 +150,22 @@ export default function Dashboard() {
           फ़िल्टर साफ़ करें
         </SoftButton>
       </div>
-      <div className="overflow-x-auto border rounded-md">
-        <table aria-label="गतिविधि सारणी" className="min-w-full text-sm border-collapse">
-          <thead className="bg-gray-50">
+      <div className="overflow-x-auto card-soft p-2">
+        <table aria-label="गतिविधि सारणी" className="min-w-full text-sm border-collapse table-fixed text-teal-50">
+          <colgroup>
+            <col className="w-[16%]" />
+            <col className="w-[14%]" />
+            <col className="w-[18%]" />
+            <col className="w-[14%]" />
+            <col className="w-[38%]" />
+          </colgroup>
+          <thead className="bg-transparent text-teal-100">
             <tr>
               <th className="text-left font-semibold p-2 border-b">दिन / दिनांक</th>
               <th className="text-left font-semibold p-2 border-b">स्थान</th>
               <th className="text-left font-semibold p-2 border-b">दौरा / कार्यक्रम</th>
-              <th className="text-left font-semibold p-2 border-b">कौन/टैग</th>
-              <th className="text-left font-semibold p-2 border-b">विवरण</th>
+              <th className="text-left font-semibold p-2 border-b w-[14%]">कौन/टैग</th>
+              <th className="text-left font-semibold p-2 border-b w-[38%]">विवरण</th>
             </tr>
           </thead>
           <tbody className="bg-white" data-testid="tbody">
@@ -167,12 +174,12 @@ export default function Dashboard() {
                 <td className="p-2 border-b whitespace-nowrap">{row.when}</td>
                 <td className="p-2 border-b">{row.where.join(', ') || '—'}</td>
                 <td className="p-2 border-b">{row.what.join(', ') || '—'}</td>
-                <td className="p-2 border-b" aria-label="कौन/टैग">
+                <td className="p-2 border-b align-top w-[14%]" aria-label="कौन/टैग">
                   {(() => {
                     const tags = [...row.which.mentions, ...row.which.hashtags];
                     if (!tags.length) return '—';
                     return (
-                      <div className="flex gap-2 flex-wrap">
+                      <div className="flex gap-2 flex-wrap max-w-[14rem]">
                         {tags.map((t, i) => {
                           const isSelected = tagFilter
                             .split(/[#,\s]+/)
@@ -207,14 +214,13 @@ export default function Dashboard() {
                     );
                   })()}
                 </td>
-                {(() => {
-                  const t = truncate(row.how, 80);
-                  return (
-                    <td className="p-2 border-b" aria-label="विवरण" title={t.title}>
-                      {t.display}
-                    </td>
-                  );
-                })()}
+                <td
+                  className="p-2 border-b align-top whitespace-pre-wrap break-words w-[38%]"
+                  aria-label="विवरण"
+                  title={row.how}
+                >
+                  {row.how}
+                </td>
               </tr>
             ))}
           </tbody>
