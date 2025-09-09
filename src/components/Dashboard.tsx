@@ -1,5 +1,5 @@
 "use client";
-import posts from '../../data/posts.json';
+import posts from '../../data/posts_new.json';
 import { parsePost, formatHindiDate } from '@/utils/parse';
 import { isParseEnabled } from '../../config/flags';
 import { matchTagFlexible, matchTextFlexible } from '@/utils/tag-search';
@@ -173,9 +173,36 @@ export default function Dashboard() {
                     if (!tags.length) return '—';
                     return (
                       <div className="flex gap-2 flex-wrap">
-                        {tags.map((t, i) => (
-                          <Chip key={`${t}-${i}`} label={t} />
-                        ))}
+                        {tags.map((t, i) => {
+                          const isSelected = tagFilter
+                            .split(/[#,\s]+/)
+                            .filter(Boolean)
+                            .some((q) => matchTagFlexible(t, q));
+                          return (
+                            <Chip
+                              key={`${t}-${i}`}
+                              label={t}
+                              selected={isSelected}
+                              onClick={() => {
+                                const current = tagFilter.trim();
+                                const norm = t.replace(/^[@#]/, '');
+                                // toggle behavior: add if missing, remove if present
+                                const tokens = current
+                                  ? current.split(/[,\s]+/).filter(Boolean)
+                                  : [];
+                                const exists = tokens.some((q) => matchTagFlexible(norm, q));
+                                let nextTokens: string[];
+                                if (exists) {
+                                  nextTokens = tokens.filter((q) => !matchTagFlexible(norm, q));
+                                } else {
+                                  nextTokens = [...tokens, `#${norm}`];
+                                }
+                                const next = nextTokens.join(', ');
+                                setTagFilter(next);
+                              }}
+                            />
+                          );
+                        })}
                       </div>
                     );
                   })()}
