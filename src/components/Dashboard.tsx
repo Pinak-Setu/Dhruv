@@ -98,6 +98,9 @@ export default function Dashboard() {
     return rows;
   }, [parsed, locFilter, tagFilter, actionFilter, fromDate, toDate]);
 
+  const totalCount = parsed.length;
+  const shownCount = filtered.length;
+
   return (
     <section>
       <div className="mb-4 flex items-end gap-4 flex-wrap card-soft p-4">
@@ -141,7 +144,11 @@ export default function Dashboard() {
             onChange={(e) => setToDate(e.target.value)}
           />
         </label>
-        <SoftButton
+        <div className="ml-auto flex items-center gap-3">
+          <div className="text-teal-200 text-sm" aria-live="polite">
+            {`दिखा रहे हैं: ${shownCount} / ${totalCount}`}
+          </div>
+          <SoftButton
           ariaLabel="फ़िल्टर साफ़ करें"
           onClick={() => {
             setLocFilter('');
@@ -151,9 +158,10 @@ export default function Dashboard() {
             setActionFilter('');
             router.push('/' as Route);
           }}
-        >
-          फ़िल्टर साफ़ करें
-        </SoftButton>
+          >
+            फ़िल्टर साफ़ करें
+          </SoftButton>
+        </div>
       </div>
       <div className="overflow-x-auto card-soft p-2">
         <table aria-label="गतिविधि सारणी" className="min-w-full text-sm border-collapse table-fixed text-teal-50">
