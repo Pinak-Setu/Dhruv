@@ -108,7 +108,7 @@ export default function Dashboard() {
           स्थान फ़िल्टर
           <input
             aria-label="स्थान फ़िल्टर"
-            className="ml-2 border border-teal-600/40 bg-transparent text-teal-50 placeholder-teal-300 px-2 py-1 rounded-md w-40"
+            className="ml-2 border border-teal-600/40 bg-transparent text-teal-50 placeholder:text-teal-300/60 px-2 py-1 rounded-md w-40"
             placeholder="जैसे: रायगढ़"
             value={locFilter}
             onChange={(e) => setLocFilter(e.target.value)}
@@ -118,7 +118,7 @@ export default function Dashboard() {
           टैग/मेंशन फ़िल्टर
           <input
             aria-label="टैग/मेंशन फ़िल्टर"
-            className="ml-2 border border-teal-600/40 bg-transparent text-teal-50 placeholder-teal-300 px-2 py-1 rounded-md w-48"
+            className="ml-2 border border-teal-600/40 bg-transparent text-teal-50 placeholder:text-teal-300/60 px-2 py-1 rounded-md w-48"
             placeholder="#समारोह, @PMOIndia"
             value={tagFilter}
             onChange={(e) => setTagFilter(e.target.value)}
@@ -129,7 +129,7 @@ export default function Dashboard() {
           <input
             aria-label="तिथि से"
             type="date"
-            className="ml-2 border border-teal-600/40 bg-transparent text-teal-50 placeholder-teal-300 px-2 py-1 rounded-md"
+            className="ml-2 border border-teal-600/40 bg-transparent text-teal-50 placeholder:text-teal-300/60 px-2 py-1 rounded-md"
             value={fromDate}
             onChange={(e) => setFromDate(e.target.value)}
           />
@@ -139,7 +139,7 @@ export default function Dashboard() {
           <input
             aria-label="तिथि तक"
             type="date"
-            className="ml-2 border border-teal-600/40 bg-transparent text-teal-50 placeholder-teal-300 px-2 py-1 rounded-md"
+            className="ml-2 border border-teal-600/40 bg-transparent text-teal-50 placeholder:text-teal-300/60 px-2 py-1 rounded-md"
             value={toDate}
             onChange={(e) => setToDate(e.target.value)}
           />
@@ -174,20 +174,20 @@ export default function Dashboard() {
           </colgroup>
           <thead className="bg-transparent text-teal-100">
             <tr>
-              <th className="text-left font-semibold p-2 border-b">दिन / दिनांक</th>
-              <th className="text-left font-semibold p-2 border-b">स्थान</th>
-              <th className="text-left font-semibold p-2 border-b">दौरा / कार्यक्रम</th>
-              <th className="text-left font-semibold p-2 border-b w-[14%]">कौन/टैग</th>
-              <th className="text-left font-semibold p-2 border-b w-[38%]">विवरण</th>
+              <th className="text-left font-semibold p-2 border-b border-teal-800/40">दिन / दिनांक</th>
+              <th className="text-left font-semibold p-2 border-b border-l border-teal-800/40">स्थान</th>
+              <th className="text-left font-semibold p-2 border-b border-l border-teal-800/40">दौरा / कार्यक्रम</th>
+              <th className="text-left font-semibold p-2 border-b border-l border-teal-800/40 w-[14%]">कौन/टैग</th>
+              <th className="text-left font-semibold p-2 border-b border-l border-teal-800/40 w-[38%]">विवरण</th>
             </tr>
           </thead>
           <tbody className="bg-transparent" data-testid="tbody">
             {filtered.map((row, index) => (
               <tr key={row.id} className={`align-top hover:bg-white/5`}>
                 <td className="p-2 border-b border-teal-800/40 whitespace-nowrap text-teal-50">{row.when}</td>
-                <td className="p-2 border-b border-teal-800/40 text-teal-50">{row.where.join(', ') || '—'}</td>
-                <td className="p-2 border-b border-teal-800/40 text-teal-50">{row.what.join(', ') || '—'}</td>
-                <td className="p-2 border-b border-teal-800/40 align-top w-[14%]" aria-label="कौन/टैग">
+                <td className="p-2 border-b border-l border-teal-800/40 text-teal-50">{row.where.join(', ') || '—'}</td>
+                <td className="p-2 border-b border-l border-teal-800/40 text-teal-50">{row.what.join(', ') || '—'}</td>
+                <td className="p-2 border-b border-l border-teal-800/40 align-top w-[14%]" aria-label="कौन/टैग">
                   {(() => {
                     const tags = [...row.which.mentions, ...row.which.hashtags];
                     if (!tags.length) return '—';
@@ -228,7 +228,7 @@ export default function Dashboard() {
                   })()}
                 </td>
                 <td
-                  className="p-2 border-b border-teal-800/40 align-top whitespace-pre-wrap break-words w-[38%] text-teal-50"
+                  className="p-2 border-b border-l border-teal-800/40 align-top whitespace-pre-wrap break-words w-[38%] text-teal-50"
                   aria-label="विवरण"
                   title={row.how}
                 >
