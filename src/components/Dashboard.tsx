@@ -149,15 +149,15 @@ export default function Dashboard() {
             {`दिखा रहे हैं: ${shownCount} / ${totalCount}`}
           </div>
           <SoftButton
-          ariaLabel="फ़िल्टर साफ़ करें"
-          onClick={() => {
-            setLocFilter('');
-            setTagFilter('');
-            setFromDate('');
-            setToDate('');
-            setActionFilter('');
-            router.push('/' as Route);
-          }}
+            ariaLabel="फ़िल्टर साफ़ करें"
+            onClick={() => {
+              setLocFilter('');
+              setTagFilter('');
+              setFromDate('');
+              setToDate('');
+              setActionFilter('');
+              router.push('/' as Route);
+            }}
           >
             फ़िल्टर साफ़ करें
           </SoftButton>
