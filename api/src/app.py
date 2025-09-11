@@ -6,12 +6,17 @@ import time
 from flask import Flask, jsonify, request
 from .parsing.normalization import normalize_tokens
 from .parsing.alias_loader import load_aliases, AliasIndex
+from .parsing.parser import LangExtractParser
+from .parsing.prompts import EXTRACTION_PROMPTS
 from .metrics import inc, snapshot as metrics_snapshot
 
 
 ALIAS_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'aliases.json')
 _ALIASES: AliasIndex | None = None
 _ALIASES_ETAG: str | None = None
+
+# Lazy-initialized LangExtract parser
+_PARSER: LangExtractParser | None = None
 
 
 def _update_etag():
@@ -119,6 +124,28 @@ def create_app() -> Flask:
       inc('normalize_calls_total')
       out.append({'traceId': str(uuid.uuid4()), 'input': {'text': text, 'tokens': tokens}, 'normalized': normalized})
     return jsonify({'items': out})
+
+  @app.post('/api/parse')
+  def parse_endpoint():
+    if os.getenv('FLAG_PARSE_ENGINE', 'on') == 'off':
+      return jsonify({'disabled': True, 'flag': 'FLAG_PARSE_ENGINE', 'traceId': str(uuid.uuid4())}), 503
+
+    payload = request.get_json(silent=True) or {}
+    text = (payload.get('text') or '').strip()
+    entity = (payload.get('entity') or '').strip()
+
+    if not text:
+      return jsonify({'error': 'text is required', 'fields': ['text'], 'traceId': str(uuid.uuid4())}), 400
+
+    if entity not in EXTRACTION_PROMPTS:
+      return jsonify({'error': 'invalid entity', 'allowedEntities': list(EXTRACTION_PROMPTS.keys()), 'traceId': str(uuid.uuid4())}), 400
+
+    global _PARSER
+    if _PARSER is None:
+      _PARSER = LangExtractParser()
+
+    result = _PARSER.parse(text, entity)
+    return jsonify({'traceId': str(uuid.uuid4()), 'text': text, 'entity': entity, 'result': result})
 
   @app.get('/api/metrics')
   def metrics():
