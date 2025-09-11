@@ -1,4 +1,3 @@
-Project_Dhruv / tests / metrics - interactions.test.tsx;
 /// <reference types="jest" />
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -31,10 +30,10 @@ describe('Metrics interactions (router mocked)', () => {
     render(<Metrics />);
 
     // Button accessible name comes from aria-label
-    const delhiButton = screen.getByRole('button', { name: 'दिल्ली पर फ़िल्टर करें' });
-    fireEvent.click(delhiButton);
+    const raigarhButton = screen.getByRole('button', { name: 'रायगढ़ पर फ़िल्टर करें' });
+    fireEvent.click(raigarhButton);
 
-    const expected = `/?loc=${encodeURIComponent('दिल्ली')}`;
+    const expected = `/?loc=${encodeURIComponent('रायगढ़')}`;
     expect(getPushMock()).toHaveBeenCalledTimes(1);
     expect(getPushMock()).toHaveBeenCalledWith(expected);
   });
@@ -42,10 +41,10 @@ describe('Metrics interactions (router mocked)', () => {
   it('clicks top action item and calls router.push with encoded action param', () => {
     render(<Metrics />);
 
-    const actionButton = screen.getByRole('button', { name: 'भूमिपूजन पर फ़िल्टर करें' });
+    const actionButton = screen.getByRole('button', { name: 'शुभकामनायें पर फ़िल्टर करें' });
     fireEvent.click(actionButton);
 
-    const expected = `/?action=${encodeURIComponent('भूमिपूजन')}`;
+    const expected = `/?action=${encodeURIComponent('शुभकामनायें')}`;
     expect(getPushMock()).toHaveBeenCalledTimes(1);
     expect(getPushMock()).toHaveBeenCalledWith(expected);
   });
