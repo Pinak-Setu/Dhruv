@@ -13,8 +13,15 @@ on:
         default: preview
 
 jobs:
+  # No-op for PRs; rely on Vercel GitHub App previews
+  noop-pr:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skipping Vercel CLI deploy for PR; using Vercel App preview."
+
   deploy:
-    if: ${{ secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID }}
+    if: ${{ github.event_name != 'pull_request' && secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
