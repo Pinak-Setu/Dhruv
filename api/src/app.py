@@ -8,6 +8,7 @@ from .parsing.normalization import normalize_tokens
 from .parsing.alias_loader import load_aliases, AliasIndex
 from .parsing.parser import LangExtractParser
 from .parsing.prompts import EXTRACTION_PROMPTS
+from .config.feature_flags import FLAGS
 from .metrics import inc, snapshot as metrics_snapshot
 
 
@@ -50,6 +51,10 @@ def create_app() -> Flask:
       'flags': {
         'FLAG_ALIAS_LOADER': os.getenv('FLAG_ALIAS_LOADER', 'on'),
         'FLAG_PARSE_ENGINE': os.getenv('FLAG_PARSE_ENGINE', 'on'),
+        'FLAG_DATA_VALIDATION': os.getenv('FLAG_DATA_VALIDATION', 'off'),  # Data validation (Pandera/GE) feature flag
+        'ENABLE_VISION': FLAGS.ENABLE_VISION,
+        'ENABLE_VIDEO': FLAGS.ENABLE_VIDEO,
+        'ENABLE_EMBEDDINGS': FLAGS.ENABLE_EMBEDDINGS,
       },
     })
 
