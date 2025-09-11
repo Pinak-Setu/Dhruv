@@ -3,15 +3,23 @@ import json
 import uuid
 import hashlib
 import time
+from datetime import datetime, timezone
 from flask import Flask, jsonify, request
+from pydantic import BaseModel
 from .parsing.normalization import normalize_tokens
 from .parsing.alias_loader import load_aliases, AliasIndex
+from .parsing.parser import LangExtractParser
+from .parsing.prompts import EXTRACTION_PROMPTS
+from .config.feature_flags import FLAGS
 from .metrics import inc, snapshot as metrics_snapshot
 
 
 ALIAS_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'aliases.json')
 _ALIASES: AliasIndex | None = None
 _ALIASES_ETAG: str | None = None
+
+# Lazy-initialized LangExtract parser
+_PARSER: LangExtractParser | None = None
 
 
 def _update_etag():
@@ -45,8 +53,40 @@ def create_app() -> Flask:
       'flags': {
         'FLAG_ALIAS_LOADER': os.getenv('FLAG_ALIAS_LOADER', 'on'),
         'FLAG_PARSE_ENGINE': os.getenv('FLAG_PARSE_ENGINE', 'on'),
+        'FLAG_DATA_VALIDATION': os.getenv('FLAG_DATA_VALIDATION', 'off'),  # Data validation (Pandera/GE) feature flag
+        'ENABLE_VISION': FLAGS.ENABLE_VISION,
+        'ENABLE_VIDEO': FLAGS.ENABLE_VIDEO,
+        'ENABLE_EMBEDDINGS': FLAGS.ENABLE_EMBEDDINGS,
       },
     })
+
+  class ParseRequest(BaseModel):
+    text: str
+    source_id: str | None = None
+    dry_run: bool = False
+
+  @app.post('/api/sota/parse')
+  def parse():
+    try:
+        req = ParseRequest(**request.json)
+    except Exception as e:
+        return jsonify({"error": "Invalid request format", "details": str(e)}), 400
+
+    # Stub: simple type guess
+    event_type = "Announcement" if "#" in req.text else "Meeting"
+    event_id = f"{datetime.now(timezone.utc).date()}-{event_type}-stub"
+    event = {
+        "event_id": event_id,
+        "type": event_type,
+        "title": req.text[:80],
+        "description": req.text,
+        "certainty_score": 0.5,
+        "provenance": req.source_id or "unknown",
+    }
+    if not req.dry_run:
+        # TODO: write to KG (later PR)
+        pass
+    return jsonify({"event": event})
 
   @app.post('/api/normalize')
   def normalize():
@@ -119,6 +159,28 @@ def create_app() -> Flask:
       inc('normalize_calls_total')
       out.append({'traceId': str(uuid.uuid4()), 'input': {'text': text, 'tokens': tokens}, 'normalized': normalized})
     return jsonify({'items': out})
+
+  @app.post('/api/parse')
+  def parse_endpoint():
+    if os.getenv('FLAG_PARSE_ENGINE', 'on') == 'off':
+      return jsonify({'disabled': True, 'flag': 'FLAG_PARSE_ENGINE', 'traceId': str(uuid.uuid4())}), 503
+
+    payload = request.get_json(silent=True) or {}
+    text = (payload.get('text') or '').strip()
+    entity = (payload.get('entity') or '').strip()
+
+    if not text:
+      return jsonify({'error': 'text is required', 'fields': ['text'], 'traceId': str(uuid.uuid4())}), 400
+
+    if entity not in EXTRACTION_PROMPTS:
+      return jsonify({'error': 'invalid entity', 'allowedEntities': list(EXTRACTION_PROMPTS.keys()), 'traceId': str(uuid.uuid4())}), 400
+
+    global _PARSER
+    if _PARSER is None:
+      _PARSER = LangExtractParser()
+
+    result = _PARSER.parse(text, entity)
+    return jsonify({'traceId': str(uuid.uuid4()), 'text': text, 'entity': entity, 'result': result})
 
   @app.get('/api/metrics')
   def metrics():
