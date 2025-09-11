@@ -21,7 +21,7 @@ jobs:
       - run: echo "Skipping Vercel CLI deploy for PR; using Vercel App preview."
 
   deploy:
-    if: ${{ github.event_name != 'pull_request' && secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID }}
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,25 +31,16 @@ jobs:
       - run: npm ci
       - name: Pull Vercel Env
         run: |
-          ENVIRONMENT=${{ github.event_name == 'workflow_dispatch' && (inputs.environment == 'prod' && 'production' || 'preview') || (github.event_name == 'push' && 'production' || 'preview') }}
-          echo "Pulling env for: $ENVIRONMENT"
-          npx vercel pull --yes --environment=$ENVIRONMENT --token=${{ secrets.VERCEL_TOKEN }}
+          echo "Pulling env for: production"
+          npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
       - name: Build
         run: npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
       - name: Deploy
-        run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.environment }}" = "prod" ]; then
-            npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-          else
-            npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
-          fi
+        run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       - name: Update Project Board - Deployed
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'prod')
         env:
           GH_TOKEN: ${{ secrets.GH_PROJECT_TOKEN }}
           PROJECT_OWNER: Pinak-Setu
