@@ -11,7 +11,7 @@ Use this template to enforce atomic scope, TDD-first delivery, and CI policy gat
 - [ ] TDD: failing tests first → minimal code to green → refactor (list test IDs in “Evidence”)
 - [ ] Lint + Typecheck pass (CI jobs: lint-type)
 - [ ] Coverage gate green (as configured in CI)
-  - Default: Lines ≥ 95%, Branches ≥ 70% (enforced by scripts/enforce-coverage.js). For PR 38, temporary gate Lines ≥ 85%, Branches ≥ 70% to unblock — see runbook.md (CI Quality Gates) for restoration plan.
+  - Lines ≥ 95%, Branches ≥ 70% (enforced by scripts/enforce-coverage.js)
   - Evidence attached (coverage/coverage-summary.json or CI artifact)
 - [ ] Security: no secrets; SAST/SCA green; CodeQL analysis completed
 - [ ] Privacy: PII minimized; data map updated; delete/export tests added where applicable

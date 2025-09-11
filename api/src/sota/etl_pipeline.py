@@ -8,9 +8,11 @@ from datetime import datetime, timedelta
 from .dataset_builders.geography_builder import build_geography_dataset
 from .dataset_builders.festival_builder import build_festival_dataset
 from .dataset_builders.poi_builder import build_poi_dataset
+from .dataset_builders.chhattisgarh_schemes_builder import build_chhattisgarh_schemes_dataset
+from .dataset_builders.central_schemes_builder import build_central_schemes_dataset
 
-# Placeholder for database connection (e.g., psycopg2 for Postgres)
-# import psycopg2
+# Database connection
+import psycopg2
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data')
 CHECKSUM_FILE = os.path.join(DATA_DIR, 'dataset_checksums.json')
@@ -51,14 +53,111 @@ def run_etl_for_builder(builder_func, dataset_name: str):
         print(f"No changes for {dataset_name}, skipping update.")
         return
 
-    # Placeholder: Insert into Postgres dims
-    # conn = psycopg2.connect(...)
-    # cursor = conn.cursor()
-    # for line in data_lines:
-    #     record = json.loads(line)
-    #     # Insert logic here (e.g., INSERT INTO dim_geography ...)
-    # cursor.close()
-    # conn.close()
+    # Insert into Postgres dims
+    conn = psycopg2.connect(
+        host="localhost",
+        database="dhruv_db",
+        user="dhruv_user",
+        password="dhruv_pass"
+    )
+    cursor = conn.cursor()
+
+    if dataset_name == 'geography':
+        for line in data_lines:
+            record = json.loads(line)
+            # Flatten the nested geography hierarchy and insert each village as a separate row
+            state = record.get('state')
+            for district in record.get('districts', []):
+                district_name = district.get('name')
+                for ac in district.get('acs', []):
+                    ac_name = ac.get('name')
+                    for block in ac.get('blocks', []):
+                        block_name = block.get('name')
+                        for gp in block.get('gps', []):
+                            gp_name = gp.get('name')
+                            for village in gp.get('villages', []):
+                                village_name = village.get('name')
+                                pincode = village.get('pincode')
+                                # Insert each village with full hierarchy
+                                cursor.execute("""
+                                    INSERT INTO dims.dim_geography (state, district, ac, block, gp, village, pincode)
+                                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                                    ON CONFLICT (state, district, village) DO NOTHING
+                                """, (
+                                    state,
+                                    district_name,
+                                    ac_name,
+                                    block_name,
+                                    gp_name,
+                                    village_name,
+                                    pincode
+                                ))
+
+    elif dataset_name == 'festival':
+        for line in data_lines:
+            record = json.loads(line)
+            # Insert festival
+            cursor.execute("""
+                INSERT INTO dims.dim_festival (name, type, month, day, description)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (name) DO NOTHING
+                RETURNING id
+            """, (
+                record['name'],
+                record['type'],
+                record['month'],
+                record['day'],
+                record.get('description')
+            ))
+            festival_id = cursor.fetchone()
+            if festival_id:
+                # Insert dates
+                for year, date_str in record.get('year_dates', {}).items():
+                    cursor.execute("""
+                        INSERT INTO dims.dim_festival_dates (festival_id, year, date)
+                        VALUES (%s, %s, %s)
+                        ON CONFLICT DO NOTHING
+                    """, (festival_id[0], int(year), date_str))
+
+    elif dataset_name == 'poi':
+        for line in data_lines:
+            record = json.loads(line)
+            # Insert POI
+            cursor.execute("""
+                INSERT INTO dims.dim_poi (name, type, lat, lon, address, osm_id, description)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT DO NOTHING
+            """, (
+                record['name'],
+                record['type'],
+                record.get('lat'),
+                record.get('lon'),
+                record.get('address'),
+                record.get('osm_id'),
+                record.get('description')
+            ))
+
+    elif dataset_name in ['chhattisgarh_schemes', 'central_schemes']:
+        for line in data_lines:
+            record = json.loads(line)
+            # Insert scheme (assuming dim_schemes table exists with JSON columns)
+            cursor.execute("""
+                INSERT INTO dims.dim_schemes (name, type, department, eligibility, benefits, application_process, contact)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (name) DO NOTHING
+            """, (
+                record['name'],
+                record['type'],
+                record.get('department'),
+                json.dumps(record.get('eligibility', {})),
+                json.dumps(record.get('benefits', {})),
+                json.dumps(record.get('application_process', {})),
+                json.dumps(record.get('contact', {}))
+            ))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
 
     print(f"Updated {dataset_name} with {len(data_lines)} records.")
 
@@ -87,6 +186,8 @@ def run_monthly_etl():
     run_etl_for_builder(build_geography_dataset, 'geography')
     run_etl_for_builder(build_festival_dataset, 'festival')
     run_etl_for_builder(build_poi_dataset, 'poi')
+    run_etl_for_builder(build_chhattisgarh_schemes_dataset, 'chhattisgarh_schemes')
+    run_etl_for_builder(build_central_schemes_dataset, 'central_schemes')
 
     # Update last run
     with open(last_run_file, 'w') as f:
