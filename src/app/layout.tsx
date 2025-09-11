@@ -1,9 +1,14 @@
 import './globals.css';
 import type { ReactNode } from 'react';
+import type { Metadata } from 'next';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Project Dhruv Dashboard',
   description: 'Functional dashboard in Hindi (Devanagari)',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://dhruv.vercel.app'),
+  alternates: {
+    canonical: '/',
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
