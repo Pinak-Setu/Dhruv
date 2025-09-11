@@ -3,6 +3,7 @@ name: Vercel Deploy
 on:
   push:
     branches: [ main ]
+  # Rely on Vercel GitHub App for PR previews; this workflow will no-op on PRs
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -13,8 +14,22 @@ on:
         default: preview
 
 jobs:
+  # Always succeed for PRs to keep checks green; Vercel App handles previews
+  noop-pr:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skipping Vercel CLI deploy for PR; using Vercel GitHub App preview."
+
+  # Succeed gracefully when secrets are missing
+  no-secrets:
+    if: ${{ github.event_name != 'pull_request' && !(secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID) }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "VERCEL_* secrets not configured; skipping deploy."
+
   deploy:
-    if: ${{ secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID }}
+    if: ${{ github.event_name != 'pull_request' && (secrets.VERCEL_TOKEN && secrets.VERCEL_ORG_ID && secrets.VERCEL_PROJECT_ID) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
