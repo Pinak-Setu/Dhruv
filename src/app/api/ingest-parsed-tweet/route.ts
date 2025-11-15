@@ -3,6 +3,24 @@ import { getDbPool } from '@/lib/db/pool';
 
 export const dynamic = 'force-dynamic';
 
+const TEXT_EVENT_KEYWORD_MAP: Record<string, string[]> = {
+  congratulation: ['बधाई', 'शुभकामन', 'congratulation', 'congrats'],
+  jayanti: ['जयंती', 'jayanti'],
+};
+
+function deriveEventTypeFromText(text?: string | null): string | null {
+  if (!text) return null;
+  const normalized = text.toLowerCase();
+  for (const [eventType, keywords] of Object.entries(TEXT_EVENT_KEYWORD_MAP)) {
+    for (const keyword of keywords) {
+      if (normalized.includes(keyword)) {
+        return eventType;
+      }
+    }
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
@@ -29,12 +47,30 @@ export async function POST(request: NextRequest) {
     // Helper function to format arrays for PostgreSQL JSONB columns
     const formatJsonArray = (arr: any[]) => JSON.stringify(arr);
 
-    // Determine event type from categories (simplified logic)
-    let eventType = 'general';
-    let confidence = 0.5;
+    // Determine event type by merging Gemini category signals with text heuristics
+    const tweetText = typeof tweet.text === 'string' ? tweet.text : '';
+    const textBasedEventType = deriveEventTypeFromText(tweetText);
 
-    if (categories.event && categories.event.length > 0) {
-      eventType = categories.event[0];
+    // Gemini may return an array of event types
+    const geminiEventTypes = Array.isArray(categories.event) ? categories.event.map(String).filter(Boolean) : [];
+
+    // Heuristic-derived types (keep as array to support multi-label union)
+    const heuristicEventTypes = textBasedEventType ? [textBasedEventType] : [];
+
+    // Unique union: never drop heuristic-derived event types
+    const mergedEventTypes = Array.from(new Set([...geminiEventTypes, ...heuristicEventTypes]));
+
+    // Choose primary label based on rule (jayanti > congratulation > gemini_first) for compatibility
+    let primaryEventType = 'general';
+    if (mergedEventTypes.includes('jayanti')) primaryEventType = 'jayanti';
+    else if (mergedEventTypes.includes('congratulation')) primaryEventType = 'congratulation';
+    else if (geminiEventTypes.length > 0) primaryEventType = geminiEventTypes[0];
+
+    // Compute confidence heuristically
+    let confidence = 0.5;
+    if (heuristicEventTypes.length > 0) {
+      confidence = 0.9;
+    } else if (geminiEventTypes.length > 0) {
       confidence = 0.8;
     }
 
@@ -77,7 +113,7 @@ export async function POST(request: NextRequest) {
 
       const values = [
         tweetId,
-        eventType,
+        primaryEventType,
         confidence,
         formatJsonArray(locations), // locations is JSONB
         people,     // people_mentioned is TEXT[] - pass actual array
@@ -92,7 +128,9 @@ export async function POST(request: NextRequest) {
 
       const result = await client.query(insertQuery, values);
 
+      // Debug/log for merged event types
       console.log(`[API] Successfully ingested parsed tweet ${tweetId} with ID ${result.rows[0].id}`);
+      console.log(`[API:DEBUG] raw_text=${tweetText.slice(0,200)} gemini_event_types=${JSON.stringify(geminiEventTypes)} heuristic_event_types=${JSON.stringify(heuristicEventTypes)} merged_event_types=${JSON.stringify(mergedEventTypes)} primary=${primaryEventType}`);
 
       return NextResponse.json({
         success: true,
