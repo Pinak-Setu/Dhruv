@@ -26,10 +26,14 @@ jobs:
             echo "Missing Vercel secrets: VERCEL_TOKEN, VERCEL_ORG_ID or VERCEL_PROJECT_ID";
             exit 1;
           fi
-      - name: Check Vercel token validity
+      - name: Verify Vercel secrets via script
         run: |
-          echo "Validating Vercel token and access"
-          npx vercel whoami --token=${{ secrets.VERCEL_TOKEN }} || (echo "Invalid Vercel token or insufficient permissions" && exit 1)
+          echo "Running repository Vercel secret verification script"
+          bash ./scripts/ops/verify-vercel-secrets.sh
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Pull Vercel Env
         run: |
@@ -37,7 +41,7 @@ jobs:
           echo "Pulling env for: $ENVIRONMENT"
           echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID }}"
           # Use explicit project arg so the Vercel CLI can locate the project settings in CI
-          npx vercel pull --yes --environment=$ENVIRONMENT --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          npx vercel pull --yes --environment=$ENVIRONMENT --token=${{ secrets.VERCEL_TOKEN }} --project-id=${{ secrets.VERCEL_PROJECT_ID }}
       - name: Build (Vercel Build)
         run: npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
       - name: Deploy preview/production
