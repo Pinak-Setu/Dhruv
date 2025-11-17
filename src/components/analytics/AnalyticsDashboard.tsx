@@ -275,6 +275,7 @@ export default function AnalyticsDashboard() {
         <div className="text-red-300 mb-4">
           <p className="text-lg font-semibold">⚠️ त्रुटि</p>
           <p className="text-base">{error}</p>
+          <p className="text-sm mt-2 text-white/70">Please check browser console for more details</p>
         </div>
         <button
           onClick={fetchAnalyticsData}
@@ -292,6 +293,13 @@ export default function AnalyticsDashboard() {
       <div className="text-center py-12">
         <div className="text-muted">
           <p className="text-lg">📊 कोई डेटा नहीं मिला</p>
+          <p className="text-sm mt-2">Analytics data not found. Please check database connection and data.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 neon-button px-4 py-2 text-sm font-semibold rounded-lg"
+          >
+            Reload Page
+          </button>
         </div>
       </div>
     );

@@ -50,9 +50,11 @@ export default function DashboardShell({
           <div className="absolute top-0 right-0 sm:top-2 sm:right-2 md:top-4 md:right-4 z-[100]">
             <AdminLoginButton className="text-xs sm:text-sm" />
           </div>
-          <h1 className={`${titleFont.className} text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white font-black mb-2 drop-shadow-[0_0_6px_#12005E] transition-all duration-500 ease-in-out pr-24 sm:pr-32 md:pr-40`}>
-            सोशल मीडिया एनालिटिक्स डैशबोर्ड
-          </h1>
+          <div className="pr-24 sm:pr-32 md:pr-40">
+            <h1 className={`${titleFont.className} text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-white font-black mb-2 drop-shadow-[0_0_6px_#12005E] transition-all duration-500 ease-in-out`}>
+              सोशल मीडिया एनालिटिक्स डैशबोर्ड
+            </h1>
+          </div>
         </header>
 
         <nav

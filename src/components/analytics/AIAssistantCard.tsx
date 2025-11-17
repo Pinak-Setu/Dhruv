@@ -110,9 +110,9 @@ export default function AIAssistantCard() {
         {suggestions.map((suggestion, index) => (
           <div key={index} className="p-2 border-b border-white/10">
             <p className="font-medium text-white">
-              Suggest to change <span className="text-yellow-400">{suggestion.field}</span> to "{Array.isArray(suggestion.suggested_value) ? suggestion.suggested_value.join(', ') : String(suggestion.suggested_value)}"
+              Suggest to change <span className="text-white/70">{suggestion.field}</span> to "{Array.isArray(suggestion.suggested_value) ? suggestion.suggested_value.join(', ') : String(suggestion.suggested_value)}"
             </p>
-            <p className="text-xs text-mint-green">Confidence: {(suggestion.confidence * 100).toFixed(0)}%</p>
+            <p className="text-xs text-white/70">Confidence: {(suggestion.confidence * 100).toFixed(0)}%</p>
             {suggestion.rationale && <p className="text-xs text-white/70">Rationale: {suggestion.rationale}</p>}
           </div>
         ))}

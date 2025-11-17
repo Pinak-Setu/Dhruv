@@ -10,7 +10,15 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('end_date') ?? undefined;
     const location = searchParams.get('location') ?? undefined;
 
+    console.log('Analytics API called with params:', { startDate, endDate, location });
+
     const data = await fetchAnalyticsData({ startDate, endDate, location });
+
+    console.log('Analytics data fetched successfully:', {
+      total_tweets: data.total_tweets,
+      event_distribution_count: Object.keys(data.event_distribution).length,
+      location_distribution_count: Object.keys(data.location_distribution).length,
+    });
 
     return NextResponse.json({
       success: true,
@@ -22,6 +30,7 @@ export async function GET(request: NextRequest) {
       {
         success: false,
         error: 'Failed to load analytics data',
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 },
     );
