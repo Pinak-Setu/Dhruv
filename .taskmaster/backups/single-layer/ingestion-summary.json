@@ -1,21 +1,20 @@
 {
-  "timestamp": "2025-11-14T15:01:36.722Z",
-  "batchSize": 2,
+  "timestamp": "2025-11-17T19:19:30.543Z",
+  "batchSize": 5,
   "maxBatches": 1,
   "concurrency": 1,
   "requestsPerMinute": 30,
   "apiBase": "http://127.0.0.1:3000",
-  "dryRun": false,
-  "testMode": false,
-  "geminiApiKey": "AIzaSyBdBsElMylGirrPsdeEBW85xZAeTHmOsPQ",
+  "dryRun": true,
+  "testMode": true,
+  "geminiApiKey": "AIzaSyCP6e_4AFpnmbvFPVKmJxfizpwFSwp21V0",
   "batchesProcessed": 1,
-  "totalProcessed": 2,
+  "totalProcessed": 5,
   "totalFailed": 0,
   "totalDuplicates": 0,
   "vectorization": {
-    "faiss": 0,
+    "faiss": 1,
     "milvus": 0,
-    "failures": 1,
-    "failed": null
+    "failures": 0
   }
 }

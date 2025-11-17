@@ -101,7 +101,7 @@ export default function AdminLoginButton({ className = '' }: AdminLoginButtonPro
         className={`relative z-[100] flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-[#5D3FD3] hover:bg-[#8B1A8B] rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#5D3FD3] focus:ring-offset-2 cursor-pointer ${className}`}
         aria-label="Admin login"
         disabled={loading}
-        style={{ 
+        style={{
           pointerEvents: loading ? 'none' : 'auto',
           position: 'relative',
           zIndex: 100

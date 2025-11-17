@@ -62,6 +62,50 @@ const FAILED_TWEETS_LOG = path.join(BACKUP_DIR, 'failed_tweets.jsonl');
 const RETRY_QUEUE_LOG = path.join(BACKUP_DIR, 'retry_queue.jsonl');
 const SUMMARY_PATH = path.join(BACKUP_DIR, 'ingestion-summary.json');
 
+// --- Gemini Free Tier Safety Constants ---
+const MAX_FREE_TIER_RPM = 10;
+const MAX_FREE_TIER_DAILY_TWEETS = 1400;
+const GEMINI_DAILY_USAGE_PATH = path.join(BACKUP_DIR, 'gemini_daily_usage.json');
+const GEMINI_RATE_LIMIT_PAUSE_MS = 65000; // 65 seconds
+const MAX_CONSECUTIVE_429 = 5;
+
+// --- Gemini Free Tier Safety Functions ---
+
+function getGeminiDailyUsage() {
+  try {
+    if (fs.existsSync(GEMINI_DAILY_USAGE_PATH)) {
+      const data = JSON.parse(fs.readFileSync(GEMINI_DAILY_USAGE_PATH, 'utf8'));
+      const today = new Date().toISOString().split('T')[0];
+      if (data.date === today) {
+        return data.count;
+      }
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not read Gemini daily usage file:', error.message);
+  }
+  return 0;
+}
+
+function incrementGeminiDailyUsage() {
+  const today = new Date().toISOString().split('T')[0];
+  let currentCount = getGeminiDailyUsage();
+  currentCount += 1;
+
+  const data = { date: today, count: currentCount };
+  fs.writeFileSync(GEMINI_DAILY_USAGE_PATH, JSON.stringify(data, null, 2));
+  return currentCount;
+}
+
+function checkGeminiDailyLimit() {
+  const currentCount = getGeminiDailyUsage();
+  if (currentCount >= MAX_FREE_TIER_DAILY_TWEETS) {
+    console.log(`❌ STOP: Gemini free tier daily limit reached (${currentCount}/${MAX_FREE_TIER_DAILY_TWEETS} tweets)`);
+    console.log('💡 Wait until tomorrow or upgrade to paid tier to continue.');
+    return false;
+  }
+  return true;
+}
+
 // --- Main Execution ---
 
 export async function main() {
@@ -70,12 +114,18 @@ export async function main() {
     batchSize: parseInt(cliOptions['batch-size'] ?? '10', 10),
     maxBatches: parseInt(cliOptions['max-batches'] ?? '0', 10),
     concurrency: Math.max(1, parseInt(cliOptions['concurrency'] ?? '1', 10)),
-    requestsPerMinute: parseInt(cliOptions['rpm'] ?? '1', 10),
+    requestsPerMinute: Math.min(parseInt(cliOptions['rpm'] ?? '1', 10), MAX_FREE_TIER_RPM),
     apiBase: cliOptions['api-base'] ?? process.env.API_BASE ?? 'http://127.0.0.1:3000',
     dryRun: parseBoolean(cliOptions['dry-run']),
     testMode: parseBoolean(cliOptions['test-mode']),
     geminiApiKey: process.env.GEMINI_API_KEY,
   };
+
+  // Log RPM capping for transparency
+  const requestedRPM = parseInt(cliOptions['rpm'] ?? '1', 10);
+  if (requestedRPM > MAX_FREE_TIER_RPM) {
+    console.log(`🛡️ Gemini Free Tier Protection: Capping RPM from ${requestedRPM} to ${MAX_FREE_TIER_RPM} to stay within free tier limits`);
+  }
 
   ensureBackupFolders();
   logConfig(config);
@@ -120,6 +170,11 @@ export async function main() {
 // --- Batch Processing Orchestrator ---
 
 export async function processAllBatches(dbClient, geminiClient, config) {
+    // Check Gemini daily limit before starting
+    if (!config.dryRun && !checkGeminiDailyLimit()) {
+      process.exit(0);
+    }
+
     const summary = {
         timestamp: new Date().toISOString(),
         ...config,
@@ -132,8 +187,15 @@ export async function processAllBatches(dbClient, geminiClient, config) {
 
     let offset = 0;
     let geminiConsecutiveFailures = 0;
+    let geminiConsecutive429 = 0;
 
     while (true) {
+        // Check daily limit before each batch
+        if (!config.dryRun && summary.totalProcessed > 0 && !checkGeminiDailyLimit()) {
+          console.log(`🛑 Stopping due to Gemini daily limit (${summary.totalProcessed} tweets processed today)`);
+          break;
+        }
+
         if (config.maxBatches > 0 && summary.batchesProcessed >= config.maxBatches) {
             console.log('🛑 Max batches reached. Stopping.');
             break;
@@ -164,10 +226,21 @@ export async function processAllBatches(dbClient, geminiClient, config) {
                         throw new Error('Circuit breaker tripped: Too many consecutive Gemini failures.');
                     }
 
+                    if (geminiConsecutive429 >= MAX_CONSECUTIVE_429) {
+                        throw new Error(`Circuit breaker tripped: Too many consecutive 429 rate limit responses (${MAX_CONSECUTIVE_429}).`);
+                    }
+
                     const result = await processSingleTweet(tweet, dbClient, geminiClient, config);
                     geminiConsecutiveFailures = 0; // Reset on success
+                    geminiConsecutive429 = 0; // Reset on success
 
-                    if (result.status === 'processed') batchResults.processed.push(result.data);
+                    if (result.status === 'processed') {
+                        batchResults.processed.push(result.data);
+                        // Increment daily usage counter for successful Gemini calls
+                        if (!config.dryRun) {
+                            incrementGeminiDailyUsage();
+                        }
+                    }
                     if (result.status === 'duplicate') batchResults.duplicates++;
                     if (result.status === 'failed') batchResults.failed.push(tweet);
 
@@ -175,6 +248,7 @@ export async function processAllBatches(dbClient, geminiClient, config) {
                     console.error(` CRITICAL WORKER ERROR for tweet ${tweet.id}: ${error.message}`);
                     batchResults.failed.push(tweet);
                     if (error.isGeminiFailure) geminiConsecutiveFailures++;
+                    if (error.is429) geminiConsecutive429++;
                 }
                 await delay(delayBetweenRequests / config.concurrency);
             }
@@ -366,6 +440,16 @@ Return only valid JSON, no additional text or explanations.`;
         return parsed;
         
     } catch (error) {
+        // Handle 429 rate limit responses with auto-pause
+        if (error.status === 429 || error.message.includes('429') || error.message.includes('rate limit')) {
+            console.log(`⚠️ Gemini rate limit hit (429) — Auto-pausing ${GEMINI_RATE_LIMIT_PAUSE_MS/1000} seconds to stay within free tier…`);
+            await delay(GEMINI_RATE_LIMIT_PAUSE_MS);
+            console.log('⏰ Rate limit pause complete, retrying...');
+            // Mark this as a 429 error for circuit breaker
+            error.is429 = true;
+            throw error;
+        }
+
         console.error(`  ❌ Gemini parsing failed for tweet ${tweet.id}: ${error.message}`);
         // Return empty categories on failure
         return {
@@ -607,10 +691,11 @@ function logConfig(config) {
   console.log(`📊 Batch size: ${config.batchSize}`);
   console.log(`🔢 Max batches: ${config.maxBatches === 0 ? 'unlimited' : config.maxBatches}`);
   console.log(`⚙️  Concurrency: ${config.concurrency}`);
-  console.log(`⏱️  Rate Limit: ${config.requestsPerMinute} RPM`);
+  console.log(`⏱️  Rate Limit: ${config.requestsPerMinute} RPM (capped at ${MAX_FREE_TIER_RPM} for free tier)`);
   console.log(`🌐 API base: ${config.apiBase}`);
   console.log(`🧪 Dry run: ${config.dryRun ? 'yes' : 'no'}`);
   console.log(`[Test Mode]: ${config.testMode ? 'ENABLED' : 'DISABLED'}`);
+  console.log(`🛡️  Free Tier Protection: ACTIVE (${MAX_FREE_TIER_DAILY_TWEETS} daily limit, auto-pause on 429)`);
   console.log('');
 }
 
