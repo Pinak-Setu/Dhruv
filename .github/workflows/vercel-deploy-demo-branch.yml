@@ -1,0 +1,62 @@
+name: Vercel Deploy (Demo Branch)
+
+# Deploy demo branch automatically to Vercel preview + manual prod deploy
+on:
+  push:
+    branches:
+      - demo-glass-component
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment (preview|prod)"
+        required: true
+        default: preview
+
+jobs:
+  deploy-demo-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - name: Check Vercel secrets
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ] || [ -z "${{ secrets.VERCEL_ORG_ID }}" ] || [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            echo "Missing Vercel secrets: VERCEL_TOKEN, VERCEL_ORG_ID, or VERCEL_PROJECT_ID";
+            exit 1;
+          fi
+      - name: Build (Vercel Build)
+        run: npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy preview/production
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ inputs.environment }}" = "prod" ]; then
+              echo "Manual request: Deploying to PRODUCTION...";
+              npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --confirm --org-id=${{ secrets.VERCEL_ORG_ID }} --project-id=${{ secrets.VERCEL_PROJECT_ID }};
+            else
+              echo "Manual request: Deploying to PREVIEW...";
+              npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --confirm --org-id=${{ secrets.VERCEL_ORG_ID }} --project-id=${{ secrets.VERCEL_PROJECT_ID }};
+            fi
+          else
+            echo "Push event: Deploying branch preview...";
+            npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --confirm --org-id=${{ secrets.VERCEL_ORG_ID }} --project-id=${{ secrets.VERCEL_PROJECT_ID }};
+          fi
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+  notify-success:
+    if: success()
+    needs: deploy-demo-branch
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Vercel deploy for demo-glass-component completed"
+
+  notify-failure:
+    if: failure()
+    needs: deploy-demo-branch
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Vercel deploy for demo-glass-component failed; check logs"

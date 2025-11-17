@@ -295,41 +295,6 @@ export default function Dashboard() {
 
   return (
     <section>
-      {/* Simple summaries for tests and quick insights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 transition-all duration-500 ease-in-out">
-        <div className="glassmorphic-card p-4 rounded-2xl">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-wide text-white drop-shadow-[0_0_6px_#12005E] mb-2 mt-4 transition-all duration-500 ease-in-out">📍 स्थान सारांश</h2>
-          <div className="text-sm sm:text-base text-secondary mt-1">
-            {(() => {
-              const top = Object.entries(
-                filtered.reduce((acc: Record<string, number>, r: any) => {
-                  (r.where || []).forEach((w: string) => {
-                    acc[w] = (acc[w] || 0) + 1;
-                  });
-                  return acc;
-                }, {})
-              ).sort((a, b) => b[1] - a[1]).slice(0, 3);
-              return top.length ? top.map(([k, v]) => `${k} (${v})`).join(', ') : '—';
-            })()}
-          </div>
-        </div>
-        <div className="glassmorphic-card p-4 rounded-2xl">
-          <h2 className="text-xl sm:text-2xl font-bold tracking-wide text-white drop-shadow-[0_0_6px_#12005E] mb-2 mt-4 transition-all duration-500 ease-in-out">🎯 गतिविधि सारांश</h2>
-          <div className="text-sm sm:text-base text-secondary mt-1">
-            {(() => {
-              const top = Object.entries(
-                filtered.reduce((acc: Record<string, number>, r: any) => {
-                  (r.what || []).forEach((w: string) => {
-                    acc[w] = (acc[w] || 0) + 1;
-                  });
-                  return acc;
-                }, {})
-              ).sort((a, b) => b[1] - a[1]).slice(0, 3);
-              return top.length ? top.map(([k, v]) => `${getEventTypeInHindi(k)} (${v})`).join(', ') : '—';
-            })()}
-          </div>
-        </div>
-      </div>
       <div className="mb-4 flex items-end gap-4 flex-wrap glassmorphic-card p-4 rounded-2xl transition-all duration-500 ease-in-out">
         <label className="text-sm sm:text-base font-medium text-white">
           स्थान फ़िल्टर
