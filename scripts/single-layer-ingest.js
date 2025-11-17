@@ -21,6 +21,27 @@
  *   --test-mode                  (default: false, uses local mock data instead of DB)
  */
 
+/**
+ * CONTRACT: Safe Tweet Ingestion Pipeline
+ *
+ * Environment Variables Required:
+ * - GEMINI_API_KEY: For tweet parsing (must be valid and current)
+ * - DATABASE_URL: PostgreSQL connection string (preferred over individual DB_* vars)
+ * - API_BASE: Dashboard API endpoint (default: http://127.0.0.1:3000)
+ *
+ * Safety Guarantees:
+ * - NO DELETES: This script never deletes data from the database
+ * - BACKUPS: All operations create comprehensive backups before processing
+ * - REVIEW FLAGS: Always use --dry-run first, then --test-mode for validation
+ * - RATE LIMITING: Respects Gemini API limits with configurable RPM
+ * - ERROR HANDLING: Circuit breaker for consecutive failures, retry queues
+ *
+ * Usage Pattern:
+ * 1. --dry-run --test-mode: Validate logic with mock data
+ * 2. --dry-run: Test against real DB without ingestion
+ * 3. --batch-size=5 --max-batches=1 --rpm=30: Production with small batches
+ */
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
