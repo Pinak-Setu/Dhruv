@@ -30,7 +30,9 @@ jobs:
         run: |
           ENVIRONMENT=${{ github.event_name == 'workflow_dispatch' && (inputs.environment == 'prod' && 'production' || 'preview') || (github.event_name == 'push' && 'production' || 'preview') }}
           echo "Pulling env for: $ENVIRONMENT"
-          npx vercel pull --yes --environment=$ENVIRONMENT --token=${{ secrets.VERCEL_TOKEN }}
+            echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID }}"
+            # Use explicit project arg so the Vercel CLI can locate the project settings in CI
+            npx vercel pull --yes --environment=$ENVIRONMENT --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
       - name: Build (Vercel Build)
         run: npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
       - name: Deploy preview/production
