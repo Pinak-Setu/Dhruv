@@ -295,7 +295,7 @@ export default function Dashboard() {
 
   return (
     <section>
-      <div className="mb-4 flex items-end gap-4 flex-wrap glassmorphic-card p-4 rounded-2xl transition-all duration-500 ease-in-out">
+      <div className="mb-4 flex items-end gap-4 flex-wrap glass-section-card p-4 rounded-2xl transition-all duration-500 ease-in-out">
         <label className="text-sm sm:text-base font-medium text-white">
           स्थान फ़िल्टर
           <input
@@ -360,7 +360,7 @@ export default function Dashboard() {
           </SoftButton>
         </div>
       </div>
-      <div className="overflow-x-auto glassmorphic-card p-2 rounded-2xl transition-all duration-500 ease-in-out">
+      <div className="overflow-x-auto glass-section-card p-2 rounded-2xl transition-all duration-500 ease-in-out">
         <table aria-label="गतिविधि सारणी" className="min-w-full text-sm sm:text-base border-collapse table-fixed text-white">
           <colgroup>
             <col className="w-[16%]" />

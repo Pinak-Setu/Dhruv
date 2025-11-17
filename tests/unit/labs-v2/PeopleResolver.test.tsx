@@ -2,13 +2,14 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import PeopleResolver from '@/app/labs-v2/review/PeopleResolver';
+import { Mock } from 'vitest';
 
 describe('PeopleResolver', () => {
-  const onResolveMock = jest.fn();
+  const onResolveMock = vi.fn();
   const initialPeople = ['Person A', 'Person B'];
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('should render initial people and allow adding a new person', () => {

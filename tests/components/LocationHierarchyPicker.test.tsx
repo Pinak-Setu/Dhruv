@@ -6,7 +6,7 @@ import LocationHierarchyPicker from '@/components/review/LocationHierarchyPicker
 describe('LocationHierarchyPicker', () => {
   beforeEach(() => {
     // @ts-ignore
-    global.fetch = jest.fn(async (url: string) => {
+    global.fetch = vi.fn(async (url: string) => {
       if (url.includes('/api/geo/search')) {
         return {
           ok: true,

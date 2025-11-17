@@ -5,7 +5,7 @@ import Dashboard from '@/components/Dashboard';
 describe('Feature flag: FLAG_PARSE', () => {
   const OLD_ENV = process.env;
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
     process.env = { ...OLD_ENV };
   });
   afterAll(() => {

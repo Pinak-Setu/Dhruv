@@ -1,0 +1,20 @@
+{
+  "timestamp": "2025-11-17T16:56:00.713Z",
+  "batchSize": 2,
+  "maxBatches": 1,
+  "concurrency": 2,
+  "requestsPerMinute": 5,
+  "apiBase": "http://localhost:3000",
+  "dryRun": true,
+  "testMode": true,
+  "geminiApiKey": "AIzaSyBdBsElMylGirrPsdeEBW85xZAeTHmOsPQ",
+  "batchesProcessed": 1,
+  "totalProcessed": 2,
+  "totalFailed": 0,
+  "totalDuplicates": 0,
+  "vectorization": {
+    "faiss": 1,
+    "milvus": 0,
+    "failures": 0
+  }
+}

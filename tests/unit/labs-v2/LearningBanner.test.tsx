@@ -2,17 +2,18 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import LearningBanner from '@/app/labs-v2/review/LearningBanner';
+import { Mock } from 'vitest';
 
 // Mock the fetch API
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('LearningBanner', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('should fetch initial status and render correctly', async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
+    (fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ isEnabled: true }),
     });
@@ -27,13 +28,13 @@ describe('LearningBanner', () => {
 
   test('should toggle status on click and call the API', async () => {
     // Initial status is false
-    (fetch as jest.Mock).mockResolvedValueOnce({
+    (fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ isEnabled: false }),
     });
 
     // Mock the toggle API response
-    (fetch as jest.Mock).mockResolvedValueOnce({
+    (fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ success: true, isEnabled: true }),
     });
@@ -60,13 +61,13 @@ describe('LearningBanner', () => {
 
   test('should revert optimistic update if API call fails', async () => {
     // Initial status is true
-    (fetch as jest.Mock).mockResolvedValueOnce({
+    (fetch as Mock).mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ isEnabled: true }),
     });
 
     // Mock a failed toggle API response
-    (fetch as jest.Mock).mockRejectedValueOnce(new Error('API Failure'));
+    (fetch as Mock).mockRejectedValueOnce(new Error('API Failure'));
 
     render(<LearningBanner />);
 

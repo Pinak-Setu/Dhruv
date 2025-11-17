@@ -2,9 +2,10 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import EventResolver from '@/app/labs-v2/review/EventResolver';
+import { Mock } from 'vitest';
 
 // Mock the fetch API
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 const mockSuggestions = [
   { id: 'evt-type-1', name_english: 'Political Rally', score: 0.92 },
@@ -15,8 +16,8 @@ describe('EventResolver', () => {
   const mockTweetId = 'tweet-123';
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (fetch as jest.Mock).mockImplementation((url) => {
+    vi.clearAllMocks();
+    (fetch as Mock).mockImplementation((url) => {
       if (url.startsWith('/api/labs/event-types/suggest')) {
         return Promise.resolve({
           ok: true,

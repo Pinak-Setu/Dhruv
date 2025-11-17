@@ -56,11 +56,11 @@ class TestResponse {
 globalAny.Response = globalAny.Response || TestResponse;
 globalAny.Headers = globalAny.Headers || TestHeaders;
 
-jest.mock('exceljs');
-jest.mock('pdfkit');
+vi.mock('exceljs');
+vi.mock('pdfkit');
 
-jest.mock('@/lib/analytics/data-source', () => ({
-  fetchAnalyticsData: jest.fn().mockResolvedValue(sampleAnalyticsData),
+vi.mock('@/lib/analytics/data-source', () => ({
+  fetchAnalyticsData: vi.fn().mockResolvedValue(sampleAnalyticsData),
 }));
 
 import { GET } from '@/app/api/analytics/export/route';

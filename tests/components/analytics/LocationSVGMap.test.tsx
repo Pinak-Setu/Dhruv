@@ -43,7 +43,7 @@ const defaultProps = {
 
 describe('LocationSVGMap', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('Title and subtitle should render correctly', () => {

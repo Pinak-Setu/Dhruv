@@ -136,7 +136,7 @@ export default function D3MindmapCard() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="glassmorphic-card rounded-lg p-6"
+        className="glass-section-card rounded-lg p-6"
       >
         <h3 className="text-xl font-bold mb-4 text-white">Entity Relationship Mindmap</h3>
         <div className="flex items-center justify-center h-64">
@@ -155,7 +155,7 @@ export default function D3MindmapCard() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="glassmorphic-card rounded-lg p-6"
+        className="glass-section-card rounded-lg p-6"
       >
         <h3 className="text-xl font-bold mb-4 text-white">Entity Relationship Mindmap</h3>
         <div className="flex items-center justify-center h-64">
@@ -175,7 +175,7 @@ export default function D3MindmapCard() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="glassmorphic-card rounded-lg p-6"
+        className="glass-section-card rounded-lg p-6"
       >
         <h3 className="text-xl font-bold mb-4 text-white">Entity Relationship Mindmap</h3>
         <div className="flex items-center justify-center h-64">
@@ -193,7 +193,7 @@ export default function D3MindmapCard() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
-      className="glassmorphic-card rounded-lg p-6"
+      className="glass-section-card rounded-lg p-6"
     >
       <h3 className="text-xl font-bold mb-4 text-white">Entity Relationship Mindmap</h3>
       <svg ref={svgRef}></svg>

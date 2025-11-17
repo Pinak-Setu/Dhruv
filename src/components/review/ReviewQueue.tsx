@@ -378,7 +378,7 @@ export default function ReviewQueue() {
   if (!currentTweet) {
     return (
       <div className="text-center py-12">
-        <div className="max-w-md mx-auto glassmorphic-card p-8">
+        <div className="max-w-md mx-auto glass-section-card p-8">
           <h3 className="text-lg font-semibold text-white mb-2">समीक्षा के लिए कोई ट्वीट नहीं</h3>
           <p className="text-secondary mb-4">
             {tweets.length === 0 
@@ -429,15 +429,15 @@ export default function ReviewQueue() {
         )}
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 transition-all duration-500 ease-in-out">
-          <div className="glassmorphic-card p-4 text-center border border-amber-500/30 rounded-2xl">
+          <div className="glass-section-card p-4 text-center border border-amber-500/30 rounded-2xl">
             <div className="text-2xl sm:text-3xl font-bold text-amber-400">{stats.pending}</div>
             <div className="text-sm sm:text-base text-secondary">समीक्षा के लिए (Pending)</div>
           </div>
-          <div className="glassmorphic-card p-4 text-center border border-green-500/30 rounded-2xl">
+          <div className="glass-section-card p-4 text-center border border-green-500/30 rounded-2xl">
             <div className="text-2xl sm:text-3xl font-bold text-green-400">{stats.reviewed}</div>
             <div className="text-sm sm:text-base text-secondary">समीक्षित (Reviewed)</div>
           </div>
-          <div className="glassmorphic-card p-4 text-center border border-[#8BF5E6]/30 rounded-2xl">
+          <div className="glass-section-card p-4 text-center border border-[#8BF5E6]/30 rounded-2xl">
             <div className="text-2xl sm:text-3xl font-bold text-[#8BF5E6]">{Math.round(stats.avgConfidence * 100)}%</div>
             <div className="text-sm sm:text-base font-semibold text-white">औसत विश्वास <span className="text-xs sm:text-sm font-normal text-secondary">(Avg Confidence)</span></div>
           </div>
@@ -460,7 +460,7 @@ export default function ReviewQueue() {
         </div>
 
         {/* Review Card */}
-        <div className={`glassmorphic-card border-2 ${confidence <= 0.5 ? 'border-red-500/50' : confidence <= 0.8 ? 'border-yellow-500/50' : 'border-green-500/50'}`}>
+        <div className={`glass-section-card border-2 ${confidence <= 0.5 ? 'border-red-500/50' : confidence <= 0.8 ? 'border-yellow-500/50' : 'border-green-500/50'}`}>
           <div className="p-4 border-b border-white/10">
             <div className="flex justify-between items-start">
               <div>
@@ -741,7 +741,7 @@ export default function ReviewQueue() {
 
         {/* Correction Log (if any) */}
         {corrections[currentTweet.id] && (
-          <div className="glassmorphic-card p-4 border border-green-500/30">
+          <div className="glass-section-card p-4 border border-green-500/30">
             <h3 className="text-sm font-semibold text-white mb-2">✅ Corrections Applied:</h3>
             {corrections[currentTweet.id].map((corr, i) => (
               <div key={i} className="text-xs text-secondary mb-1">

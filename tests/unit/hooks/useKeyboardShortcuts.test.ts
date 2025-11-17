@@ -2,8 +2,8 @@ import { renderHook } from '@testing-library/react';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 describe('useKeyboardShortcuts', () => {
-  const mockCallback1 = jest.fn();
-  const mockCallback2 = jest.fn();
+  const mockCallback1 = vi.fn();
+  const mockCallback2 = vi.fn();
 
   const shortcuts = [
     { key: 'a', callback: mockCallback1 },

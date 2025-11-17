@@ -81,7 +81,7 @@ test('Glassmorphic card styling consistency', async ({ page }) => {
   
   // Get computed styles from a glassmorphic card
   const cardStyles = await page.evaluate(() => {
-    const card = document.querySelector('.glassmorphic-card');
+    const card = document.querySelector('.glass-section-card');
     if (!card) return null;
     const styles = window.getComputedStyle(card);
     return {

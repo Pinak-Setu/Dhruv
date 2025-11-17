@@ -49,7 +49,7 @@ test.describe('End-to-End Theme Consistency', () => {
       await page.waitForTimeout(1000);
 
       const style = await page.evaluate(() => {
-        const card = document.querySelector('.glassmorphic-card');
+        const card = document.querySelector('.glass-section-card');
         if (!card) return null;
         const styles = window.getComputedStyle(card);
         return {
@@ -94,7 +94,7 @@ test.describe('End-to-End Theme Consistency', () => {
 
       // Check for inline shadow overrides that might break theme
       const inlineShadows = await page.evaluate(() => {
-        const cards = document.querySelectorAll('.glassmorphic-card');
+        const cards = document.querySelectorAll('.glass-section-card');
         const overrides: string[] = [];
         
         cards.forEach((card) => {

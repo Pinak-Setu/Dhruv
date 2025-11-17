@@ -2,13 +2,14 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SchemeResolver from '@/app/labs-v2/review/SchemeResolver';
+import { Mock } from 'vitest';
 
 describe('SchemeResolver', () => {
-  const onResolveMock = jest.fn();
+  const onResolveMock = vi.fn();
   const initialSchemes = ['Scheme X', 'Scheme Y'];
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('should render initial schemes and allow adding a new scheme', () => {

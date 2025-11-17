@@ -19,44 +19,45 @@
 import { GET, PUT } from '@/app/api/parsed-events/route';
 import { NextRequest } from 'next/server';
 import { Pool } from 'pg';
+import { Mock } from 'vitest';
 
 // Mock pg Pool
-jest.mock('pg', () => ({
-  Pool: jest.fn(),
+vi.mock('pg', () => ({
+  Pool: vi.fn(),
 }));
 
 // Mock fs
-jest.mock('fs', () => ({
-  existsSync: jest.fn(),
-  readFileSync: jest.fn(),
-  writeFileSync: jest.fn(),
+vi.mock('fs', () => ({
+  existsSync: vi.fn(),
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
 }));
 
 // Mock path
-jest.mock('path', () => ({
-  join: jest.fn((...args: string[]) => args.join('/')),
+vi.mock('path', () => ({
+  join: vi.fn((...args: string[]) => args.join('/')),
 }));
 
 // Note: getPool is mocked in beforeEach
 
 describe('GET /api/parsed-events - Database Primary Source', () => {
   let mockPool: any;
-  let mockQuery: jest.Mock;
+  let mockQuery: Mock;
   const mockFs = require('fs');
   const mockPath = require('path');
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
-    mockQuery = jest.fn();
+    mockQuery = vi.fn();
     mockPool = {
       query: mockQuery,
     };
-    (Pool as unknown as jest.Mock).mockImplementation(() => mockPool);
+    (Pool as unknown as Mock).mockImplementation(() => mockPool);
 
     // Mock the route module's getPool function to return our mock pool
     const routeModule = require('../../../../src/app/api/parsed-events/route');
-    routeModule.getPool = jest.fn(() => mockPool);
+    routeModule.getPool = vi.fn(() => mockPool);
 
     // Default: file doesn't exist (database should be primary)
     mockFs.existsSync.mockReturnValue(false);
@@ -65,7 +66,7 @@ describe('GET /api/parsed-events - Database Primary Source', () => {
 
   afterEach(() => {
     // Reset the module to ensure clean state
-    jest.resetModules();
+    vi.resetModules();
   });
 
   describe('Basic Functionality - Database Query', () => {
@@ -902,7 +903,7 @@ describe('PUT /api/parsed-events - Update Endpoint', () => {
   const mockPath = require('path');
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockFs.existsSync.mockReturnValue(true);
     mockPath.join.mockImplementation((...args: string[]) => args.join('/'));
   });
@@ -1049,15 +1050,15 @@ describe('PUT /api/parsed-events - Update Endpoint', () => {
 // Generate 1000 test scenarios for comprehensive coverage
 describe('Comprehensive Scenario Testing - 1000+ Cases', () => {
   let mockPool: any;
-  let mockQuery: jest.Mock;
+  let mockQuery: Mock;
   const mockFs = require('fs');
   const mockPath = require('path');
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockQuery = jest.fn();
+    vi.clearAllMocks();
+    mockQuery = vi.fn();
     mockPool = { query: mockQuery };
-    (Pool as unknown as jest.Mock).mockImplementation(() => mockPool);
+    (Pool as unknown as Mock).mockImplementation(() => mockPool);
     mockFs.existsSync.mockReturnValue(false);
   });
 

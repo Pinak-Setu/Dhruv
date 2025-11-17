@@ -2,17 +2,18 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ReviewQueue from '@/components/review/ReviewQueue';
+import { Mock } from 'vitest';
 
 describe('ReviewQueue reason required and skip flow', () => {
-  let fetchMock: jest.Mock;
+  let fetchMock: Mock;
 
   beforeEach(() => {
     // Clear all mocks and timers
-    jest.clearAllMocks();
-    jest.clearAllTimers();
-    
+    vi.clearAllMocks();
+    vi.clearAllTimers();
+
     // Mock fetch with proper cleanup
-    fetchMock = jest.fn(async (url: string, init?: any) => {
+    fetchMock = vi.fn(async (url: string, init?: any) => {
       if (typeof url === 'string' && url.includes('/api/parsed-events?')) {
         return {
           ok: true,

@@ -1,5 +1,5 @@
-jest.mock('exceljs');
-jest.mock('pdfkit');
+vi.mock('exceljs');
+vi.mock('pdfkit');
 
 import { generateCsvReport, generateExcelReport, generatePdfReport } from '@/lib/analytics/report-utils';
 import { sampleAnalyticsData } from './sample-data';

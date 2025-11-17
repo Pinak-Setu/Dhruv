@@ -1,17 +1,18 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import TagsSelector from '@/components/review/TagsSelector';
+import { Mock } from 'vitest';
 
 describe('TagsSelector', () => {
-  let fetchMock: jest.Mock;
+  let fetchMock: Mock;
 
   beforeEach(() => {
     // Clear all mocks and timers
-    jest.clearAllMocks();
-    jest.clearAllTimers();
-    
+    vi.clearAllMocks();
+    vi.clearAllTimers();
+
     // Mock fetch with proper cleanup
-    fetchMock = jest.fn().mockResolvedValue({
+    fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ success: true, tags: [ { id: 1, label_hi: 'जल जीवन मिशन' }, { id: 2, label_hi: 'स्वच्छ भारत मिशन' } ] }),
     } as any);

@@ -1,7 +1,7 @@
 import type { PoolClient } from 'pg';
 
-jest.mock('fs', () => ({
-  readFileSync: jest.fn(() =>
+vi.mock('fs', () => ({
+  readFileSync: vi.fn(() =>
     JSON.stringify({
       blocks: {},
     }),

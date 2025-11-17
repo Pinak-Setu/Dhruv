@@ -2,9 +2,10 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import LocationResolver from '@/app/labs-v2/review/LocationResolver';
+import { Mock } from 'vitest';
 
 // Mock the fetch API
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 const mockSuggestions = [
   { id: 'loc1', name_hindi: 'रायगढ़ शहर', name_english: 'Raigarh City', type: 'city', state: 'Chhattisgarh', score: 0.95 },
@@ -15,8 +16,8 @@ describe('LocationResolver', () => {
   const mockTweetId = 'tweet-123';
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (fetch as jest.Mock).mockImplementation((url) => {
+    vi.clearAllMocks();
+    (fetch as Mock).mockImplementation((url) => {
       if (url.startsWith('/api/labs/locations/resolve')) {
         return Promise.resolve({
           ok: true,
@@ -48,7 +49,7 @@ describe('LocationResolver', () => {
   });
 
   test('should display error message if fetching suggestions fails', async () => {
-    (fetch as jest.Mock).mockImplementation((url) => {
+    (fetch as Mock).mockImplementation((url) => {
       if (url.startsWith('/api/labs/locations/resolve')) {
         return Promise.resolve({
           ok: false,

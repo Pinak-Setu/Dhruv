@@ -136,7 +136,7 @@ textarea::placeholder {
 }
 
 /* Glassmorphic Card - Unified cool purple-lavender theme */
-.glassmorphic-card {
+.glass-section-card {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
