@@ -9,7 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        'mint-green': '#66FFCC',
+        'mint-green': '#8BF5E6',
         'teal-950': '#042f2e',
         /* Official Theme Colors - VERBATIM */
         'official-purple': '#5D3FD3',
@@ -24,7 +24,7 @@ const config: Config = {
         'official-active-tab': '#4169E1',
       },
       backgroundImage: {
-        'dark-gradient': 'linear-gradient(135deg, #5D3FD3 0%, #8B1A8B 100%)', /* Official theme gradient - VERBATIM */
+        'dark-gradient': 'linear-gradient(135deg, #5C47D4 0%, #7D4BCE 50%, #8F6FE8 100%)', /* Unified cool purple-lavender gradient */
       },
     },
   },
@@ -32,22 +32,29 @@ const config: Config = {
     function({ addUtilities }: any) {
       addUtilities({
         '.text-mint-green': {
-          color: '#66FFCC',
+          color: '#8BF5E6',
         },
         '.bg-mint-green': {
-          backgroundColor: '#66FFCC',
+          backgroundColor: '#8BF5E6',
         },
         '.border-mint-green': {
-          borderColor: '#66FFCC',
+          borderColor: '#8BF5E6',
         },
-        '.glassmorphic-card': {
-          background: 'var(--card-bg)', /* Official theme card background - VERBATIM */
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          borderRadius: '0.75rem',
-          padding: '1.5rem',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+        '.glass-section-card': {
+          background: 'rgba(255, 255, 255, 0.08)',
+          backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.15) 100%)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          borderRadius: '1.5rem',
+          color: '#FFFFFF',
+          textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
+          transition: 'all 0.3s ease',
+        },
+        '.glass-section-card:hover': {
+          backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.20) 100%)',
+          boxShadow: '0 12px 40px rgba(0, 0, 0, 0.35)',
         },
         '.tab-glassmorphic': {
           background: 'rgba(255, 255, 255, 0.1)',
@@ -57,8 +64,10 @@ const config: Config = {
           transition: 'all 0.3s ease',
         },
         '.tab-glassmorphic.active': {
-          background: 'rgba(65, 105, 225, 0.2)', /* official-active-tab with opacity */
-          borderColor: 'var(--active-tab)', /* Official active tab color - VERBATIM */
+          background: 'rgba(255, 255, 255, 0.05)',
+          borderColor: '#8FFAE8',
+          borderWidth: '2px',
+          boxShadow: '0 0 15px rgba(143, 250, 232, 0.3)',
         },
       })
     },
@@ -66,4 +75,3 @@ const config: Config = {
 }
 
 export default config
-

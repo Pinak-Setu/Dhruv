@@ -246,10 +246,15 @@ export class LangGraphAIAssistant {
     }
     `;
 
-      const model = this.gemini.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+      const { GoogleGenAI } = await import('@google/genai');
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: prompt
+      });
+
+      const text = response.text || '';
       
       // Clean and parse JSON response
       const cleanedText = text.replace(/```json|```/g, '').trim();
@@ -353,7 +358,7 @@ export class LangGraphAIAssistant {
       // If no schemes found, try extracting individual scheme names
       if (schemes.length === 0) {
         const individualSchemes = ['PM Kisan', 'Ayushman Bharat', 'Ujjwala', 'Mukhyamantri', 'Yuva', 
-                                    'Pradhan Mantri', 'पीएम किसान', 'आयुष्मान', 'उज्ज्वला'];
+          'Pradhan Mantri', 'पीएम किसान', 'आयुष्मान', 'उज्ज्वला'];
         for (const scheme of individualSchemes) {
           if (lowerMessage.includes(scheme.toLowerCase())) {
             schemes.push(scheme);
@@ -521,8 +526,8 @@ export class LangGraphAIAssistant {
           const locations = intent.entities.locations.length > 0 
             ? intent.entities.locations 
             : (suggestions.locations.length > 0 
-                ? suggestions.locations.slice(0, 3) 
-                : ['रायपुर']); // Fallback default location
+              ? suggestions.locations.slice(0, 3) 
+              : ['रायपुर']); // Fallback default location
           const locationResult = await this.addLocation(locations);
           if (locationResult) {
             pendingChanges.push(locationResult);
@@ -534,8 +539,8 @@ export class LangGraphAIAssistant {
           const eventTypes = intent.entities.event_types.length > 0 
             ? intent.entities.event_types 
             : (suggestions.eventTypes.length > 0 
-                ? suggestions.eventTypes.slice(0, 1) 
-                : ['बैठक']); // Fallback default event type
+              ? suggestions.eventTypes.slice(0, 1) 
+              : ['बैठक']); // Fallback default event type
           const eventResult = await this.changeEventType(eventTypes);
           if (eventResult) {
             pendingChanges.push(eventResult);
@@ -547,8 +552,8 @@ export class LangGraphAIAssistant {
           const schemes = intent.entities.schemes.length > 0 
             ? intent.entities.schemes 
             : (suggestions.schemes.length > 0 
-                ? suggestions.schemes.slice(0, 3) 
-                : ['PM-Kisan']); // Fallback default scheme
+              ? suggestions.schemes.slice(0, 3) 
+              : ['PM-Kisan']); // Fallback default scheme
           const schemeResult = await this.addScheme(schemes);
           if (schemeResult) {
             pendingChanges.push(schemeResult);

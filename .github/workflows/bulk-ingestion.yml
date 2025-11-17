@@ -1,0 +1,66 @@
+name: Bulk Tweet Ingestion
+
+on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'info'
+        type: choice
+        options:
+        - info
+        - debug
+
+jobs:
+  bulk-ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360 # 6 hours
+
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: dhruv_user
+          POSTGRES_PASSWORD: dhruv_pass
+          POSTGRES_DB: dhruv_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up database schema
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          psql -v ON_ERROR_STOP=1 "postgresql://dhruv_user:dhruv_pass@localhost:5432/dhruv_db" -f infra/init.sql
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Load tweets into database
+        env:
+          DATABASE_URL: "postgresql://dhruv_user:dhruv_pass@localhost:5432/dhruv_db"
+        run: |
+          echo "📥 Loading tweets from data files into database..."
+          node scripts/bulk-ingest-tweets.js --batch-size 100 --max-batches 50
+
+      - name: Run bulk ingestion script
+        env:
+          DATABASE_URL: "postgresql://dhruv_user:dhruv_pass@localhost:5432/dhruv_db"
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OLLAMA_BASE_URL: ${{ secrets.OLLAMA_BASE_URL }}
+          LOG_LEVEL: ${{ github.event.inputs.logLevel }}
+        run: npm run ops:parse-all-pending

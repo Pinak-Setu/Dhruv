@@ -56,6 +56,8 @@ export function useAuth(): UseAuthReturn {
 
       if (result.success) {
         // Refresh auth status to get updated user info
+        // Add a small delay to ensure cookie is set
+        await new Promise(resolve => setTimeout(resolve, 100));
         await refreshAuth();
         return true;
       } else {
@@ -118,6 +120,20 @@ export function useAuth(): UseAuthReturn {
   // Check authentication status on mount
   useEffect(() => {
     refreshAuth();
+
+    // Safety timeout: ensure loading is set to false after 5 seconds
+    // in case the auth check hangs or fails silently
+    const timeout = setTimeout(() => {
+      setAuthState(prev => {
+        if (prev.loading) {
+          console.warn('Auth check timeout - forcing loading to false');
+          return { ...prev, loading: false };
+        }
+        return prev;
+      });
+    }, 5000);
+
+    return () => clearTimeout(timeout);
   }, [refreshAuth]);
 
   return {

@@ -1,0 +1,38 @@
+name: 🪟 Glass Core CI Gate
+
+# Blocking CI gate for glass UI layer - must pass before any deploy
+on:
+  push:
+    branches: [demo-glass-component, main]
+  pull_request:
+    branches: [demo-glass-component, main]
+  workflow_dispatch:
+
+jobs:
+  glass-core-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🪟 Run Glass Core Gate
+        run: npm run test:glass-core
+
+      - name: 📊 Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: glass-core-results
+          path: test-results/
+          retention-days: 7

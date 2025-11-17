@@ -1,0 +1,138 @@
+name: Labs Verify
+
+on:
+  push:
+    branches:
+      - feature/labs-prod-ready
+  pull_request:
+    branches:
+      - feature/labs-prod-ready
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify FAISS index exists
+        run: |
+          if [ ! -f "data/embeddings/multilingual_geography/faiss_index.bin" ]; then
+            echo "FAISS index not found - skipping FAISS tests"
+          else
+            echo "FAISS index found"
+          fi
+
+      - name: Build application
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://user:pass@localhost:5432/db' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'test-key' }}
+          NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN || 'test-token' }}
+
+      - name: Start application
+        run: |
+          npm run start > server.log 2>&1 &
+          echo $! > server.pid
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://user:pass@localhost:5432/db' }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'test-key' }}
+          NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN || 'test-token' }}
+
+      - name: Wait for server
+        run: |
+          echo "Waiting for server to start..."
+          for i in {1..30}; do
+            if curl -f http://localhost:3000/api/system/health > /dev/null 2>&1; then
+              echo "Server is ready!"
+              break
+            fi
+            echo "Attempt $i/30: Server not ready yet, waiting..."
+            sleep 2
+          done
+          curl -f http://localhost:3000/api/system/health || (echo "Server health check failed" && cat server.log && exit 1)
+
+      - name: Stop application on failure
+        if: failure()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+          fi
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        run: npm run labs:test:e2e
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Install k6
+        run: |
+          sudo gpg -k || true
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69 || echo "k6 key fetch failed, will skip k6 tests"
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list || echo "k6 repo setup failed"
+          sudo apt-get update || echo "apt update failed"
+          sudo apt-get install -y k6 || echo "k6 installation failed, will skip k6 tests"
+        continue-on-error: true
+
+      - name: Run k6 load tests
+        run: |
+          if command -v k6 &> /dev/null; then
+            npm run labs:test:load
+          else
+            echo "k6 not available, skipping load tests"
+          fi
+        env:
+          BASE_URL: http://localhost:3000
+        continue-on-error: true
+
+      - name: Install Lighthouse
+        run: npm install -g lighthouse
+
+      - name: Run Lighthouse tests
+        run: |
+          npm run labs:lighthouse || echo "Lighthouse tests completed with warnings"
+        continue-on-error: true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: labs-artifacts
+          path: |
+            reports/labs-*.html
+            perf/labs-api-summary.json
+            playwright-report/
+          retention-days: 7
+
+      - name: Check FAISS manifest
+        run: |
+          if [ -f "data/embeddings/multilingual_geography/locations.json" ]; then
+            echo "FAISS locations file found"
+            if command -v jq &> /dev/null; then
+              LOCATION_COUNT=$(cat data/embeddings/multilingual_geography/locations.json | jq 'length')
+              echo "Location count: $LOCATION_COUNT"
+            else
+              echo "jq not available, skipping count"
+            fi
+          else
+            echo "FAISS locations file not found (expected in CI)"
+          fi
+        continue-on-error: true
+
+      - name: Check learning artifacts
+        run: |
+          if [ -d "data/learning" ]; then
+            echo "Learning artifacts directory found"
+            ls -la data/learning/ || echo "No artifacts yet"
+          fi

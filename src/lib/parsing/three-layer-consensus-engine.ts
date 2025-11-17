@@ -5,6 +5,12 @@
 
 import { RateLimiter } from './rate-limiter';
 import { getEventTypeInHindi } from '../i18n/event-types-hi';
+import {
+  collectFaissCandidates,
+  formatHierarchyForContext,
+  NormalizedLocationHierarchy,
+} from './location-normalizer';
+import { searchMilvusLocations, MilvusSearchResult } from '@/labs/milvus/milvus_fallback';
 
 interface ConsensusConfig {
   rateLimiter: RateLimiter;
@@ -33,10 +39,11 @@ interface ParsingResult {
   consensus_score: number;
   reasoning?: string;
   error_details?: string;
+  geo_verified?: boolean; // New field for FAISS geo validation
 }
 
 interface LayerResult {
-  layer: 'gemini' | 'ollama' | 'regex';
+  layer: 'gemini' | 'ollama' | 'regex' | 'faiss';
   event_type: string;
   confidence: number;
   locations: string[];
@@ -44,6 +51,15 @@ interface LayerResult {
   organizations: string[];
   schemes_mentioned: string[];
   error?: string;
+  geo_verified?: boolean;
+  geo_backend?: 'faiss' | 'milvus' | 'none';
+}
+
+type VectorBackend = 'faiss' | 'milvus';
+
+interface VectorMatch {
+  score: number;
+  match_type?: string;
 }
 
 export class ThreeLayerConsensusEngine {
@@ -58,7 +74,8 @@ export class ThreeLayerConsensusEngine {
   }
 
   /**
-   * Parse a tweet using three-layer consensus
+   * Parse a tweet using three-layer consensus with strict requirements
+   * ALL layers must succeed for the tweet to be accepted
    */
   async parseTweet(
     tweetText: string,
@@ -66,44 +83,104 @@ export class ThreeLayerConsensusEngine {
     tweetDate: Date
   ): Promise<ParsingResult> {
     const startTime = Date.now();
-    console.log(`Starting three-layer parsing for tweet ${tweetId}`);
+    console.log(`Starting strict three-layer parsing for tweet ${tweetId}`);
 
     if (!tweetText || !tweetText.trim()) {
-      return this.createEmptyResult(tweetId);
+      throw new Error('Empty or invalid tweet text');
     }
 
-    // Execute all three layers in parallel for maximum efficiency
-    const layerPromises = [
-      this.callGeminiLayer(tweetText, tweetId).catch(err => {
-        console.warn(`Gemini layer failed for ${tweetId}:`, err.message);
-        return this.fallbackRegexResult(tweetText, 'gemini');
-      }),
-      this.callOllamaLayer(tweetText, tweetId).catch(err => {
-        console.warn(`Ollama layer failed for ${tweetId}:`, err.message);
-        return this.fallbackRegexResult(tweetText, 'ollama');
-      }),
-      Promise.resolve(this.parseWithRegex(tweetText))
-    ];
+    const layerResults: LayerResult[] = [];
+    const errors: string[] = [];
 
-    const layerResults = await Promise.all(layerPromises);
-    const successfulResults: LayerResult[] = layerResults.map((result, index) => ({
-      ...result,
-      layer: ['gemini', 'ollama', 'regex'][index] as 'gemini' | 'ollama' | 'regex'
-    }));
+    // Layer 1: Gemini AI (Primary) - MUST succeed
+    try {
+      console.log(`🔄 Executing Gemini layer for ${tweetId}`);
+      const geminiResult = await this.callGeminiLayer(tweetText, tweetId);
+      layerResults.push({ ...geminiResult, layer: 'gemini' });
+      console.log(`✅ Gemini layer succeeded for ${tweetId}`);
+    } catch (err: any) {
+      const errorMsg = `gemini_timeout: ${err.message}`;
+      console.error(`❌ Gemini layer failed for ${tweetId}:`, errorMsg);
+      errors.push(errorMsg);
+    }
 
-    // Apply consensus voting
-    const consensusResult = this.applyConsensusVoting(successfulResults, tweetText, tweetDate);
+    // Layer 2: Ollama AI (Secondary) - MUST succeed
+    if (errors.length === 0) {
+      try {
+        console.log(`🔄 Executing Ollama layer for ${tweetId}`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Rate limiting
+        const ollamaResult = await this.callOllamaLayer(tweetText, tweetId);
+        layerResults.push({ ...ollamaResult, layer: 'ollama' });
+        console.log(`✅ Ollama layer succeeded for ${tweetId}`);
+      } catch (err: any) {
+        const errorMsg = `ollama_conflict: ${err.message}`;
+        console.error(`❌ Ollama layer failed for ${tweetId}:`, errorMsg);
+        errors.push(errorMsg);
+      }
+    }
+
+    // Layer 3: Regex + FAISS validation - MUST succeed
+    if (errors.length === 0) {
+      try {
+        console.log(`🔄 Executing Regex+FAISS layer for ${tweetId}`);
+        const regexResult = this.parseWithRegex(tweetText);
+        layerResults.push({ ...regexResult, layer: 'regex' });
+
+        // Check if regex found locations - if so, FAISS validation is required
+        const geminiLocations = layerResults.find(r => r.layer === 'gemini')?.locations ?? [];
+        const ollamaLocations = layerResults.find(r => r.layer === 'ollama')?.locations ?? [];
+        const faissCandidates = collectFaissCandidates([
+          ...regexResult.locations,
+          ...geminiLocations,
+          ...ollamaLocations,
+        ]);
+
+        if (faissCandidates.length > 0) {
+          console.log(`🔄 Executing FAISS geo validation for ${tweetId} with ${faissCandidates.length} candidate(s)`);
+          const faissResult = await this.validateWithFAISS(faissCandidates, tweetId);
+          layerResults.push(faissResult);
+
+          if (!faissResult.geo_verified) {
+            const contextStrings = faissCandidates.map(candidate =>
+              formatHierarchyForContext(candidate.originalTokens)
+            );
+            throw new Error(`faiss_no_match: No valid geospatial matches found for normalized hierarchies: ${contextStrings.join('; ')}`);
+          }
+          console.log(`✅ FAISS geo validation succeeded for ${tweetId}`);
+        } else {
+          console.log(`⏭️ Skipping FAISS validation for ${tweetId} (no normalized candidates found)`);
+        }
+
+        console.log(`✅ Regex layer succeeded for ${tweetId}`);
+      } catch (err: any) {
+        const errorMsg = err.message.startsWith('faiss_no_match') ? err.message : `regex_mismatch: ${err.message}`;
+        console.error(`❌ Regex/FAISS layer failed for ${tweetId}:`, errorMsg);
+        errors.push(errorMsg);
+      }
+    }
+
+    // If any layer failed, throw an error with all failure reasons
+    if (errors.length > 0) {
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      console.log(`❌ Strict three-layer parsing failed for ${tweetId} in ${duration}ms. Errors: ${errors.join('; ')}`);
+      throw new Error(`PARSING_FAILED: ${errors.join('; ')}`);
+    }
+
+    // All layers succeeded - apply consensus voting
+    const consensusResult = this.applyConsensusVoting(layerResults, tweetText, tweetDate);
 
     const endTime = Date.now();
     const duration = endTime - startTime;
 
-    console.log(`Three-layer parsing completed for ${tweetId} in ${duration}ms: ${consensusResult.event_type} (confidence: ${(consensusResult.overall_confidence * 100).toFixed(1)}%)`);
+    console.log(`✅ Strict three-layer parsing completed for ${tweetId} in ${duration}ms: ${consensusResult.event_type} (confidence: ${(consensusResult.overall_confidence * 100).toFixed(1)}%)`);
 
     return {
       tweet_id: tweetId,
       ...consensusResult,
-      parsed_by: 'three-layer-consensus',
-      layers_used: successfulResults.map(r => r.layer)
+      parsed_by: 'three-layer-consensus-strict',
+      layers_used: layerResults.map(r => r.layer),
+      geo_verified: layerResults.some(r => r.layer === 'faiss' && r.geo_verified)
     };
   }
 
@@ -120,19 +197,17 @@ export class ThreeLayerConsensusEngine {
 
     try {
       // Dynamic import to avoid issues if not installed
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(this.geminiApiKey);
-      const model = genAI.getGenerativeModel({
-        model: this.config.geminiModel || 'gemini-1.5-flash'
+      const { GoogleGenAI } = await import('@google/genai');
+      const ai = new GoogleGenAI({ apiKey: this.geminiApiKey });
+
+      const response = await ai.models.generateContent({
+        model: this.config.geminiModel || 'gemini-2.5-flash',
+        contents: this.buildGeminiPrompt(tweetText)
       });
 
-      const prompt = this.buildGeminiPrompt(tweetText);
-      const result = await model.generateContent(prompt);
-      const response = result.response.text();
+      console.log(`Gemini response for ${tweetId}: ${response.text?.substring(0, 100)}...`);
 
-      console.log(`Gemini response for ${tweetId}: ${response.substring(0, 100)}...`);
-
-      return this.parseGeminiResponse(response, tweetText);
+      return this.parseGeminiResponse(response.text || '', tweetText);
     } catch (error: any) {
       console.error(`Gemini API error for ${tweetId}:`, error.message);
       throw error;
@@ -222,8 +297,8 @@ export class ThreeLayerConsensusEngine {
     let totalWeight = 0;
     let workingLayers = 0;
 
-    // Weight layers (Gemini > Ollama > Regex) and count working layers
-    const layerWeights = { gemini: 3, ollama: 2, regex: 1 };
+    // Weight layers (Gemini > Ollama > Regex > FAISS) and count working layers
+    const layerWeights = { gemini: 3, ollama: 2, regex: 1, faiss: 1 };
 
     layerResults.forEach(result => {
       const weight = layerWeights[result.layer];
@@ -397,7 +472,9 @@ Be accurate and specific.`;
    */
   private parseGeminiResponse(response: string, tweetText: string): LayerResult {
     try {
-      const parsed = JSON.parse(response.trim());
+      // Clean markdown code blocks and extract JSON
+      const cleanedResponse = response.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(cleanedResponse);
       return {
         layer: 'gemini',
         event_type: parsed.event_type || 'other',
@@ -407,9 +484,9 @@ Be accurate and specific.`;
         organizations: Array.isArray(parsed.organizations) ? parsed.organizations : [],
         schemes_mentioned: Array.isArray(parsed.schemes_mentioned) ? parsed.schemes_mentioned : []
       };
-    } catch (error) {
+    } catch (error: any) {
       console.warn('Failed to parse Gemini response:', response);
-      return this.fallbackRegexResult(tweetText, 'gemini');
+      throw new Error(`Gemini parsing failed: ${error.message}`);
     }
   }
 
@@ -432,22 +509,136 @@ Be accurate and specific.`;
         organizations: Array.isArray(parsed.organizations) ? parsed.organizations : [],
         schemes_mentioned: Array.isArray(parsed.schemes_mentioned) ? parsed.schemes_mentioned : []
       };
-    } catch (error) {
+    } catch (error: any) {
       console.warn('Failed to parse Ollama response:', response);
-      return this.fallbackRegexResult(tweetText, 'ollama');
+      throw new Error(`Ollama parsing failed: ${error.message}`);
     }
   }
 
   /**
-   * Fallback regex result when AI parsing fails
+   * Validate locations using FAISS geo embeddings
+   * Only called when regex layer finds locations
    */
-  private fallbackRegexResult(tweetText: string, layer: string): LayerResult {
-    const regexResult = this.parseWithRegex(tweetText);
+  private async validateWithFAISS(
+    candidates: NormalizedLocationHierarchy[],
+    tweetId: string
+  ): Promise<LayerResult> {
+    try {
+      const faissResult = await this.validateCandidatesAgainstBackend('faiss', candidates, tweetId);
+      if (faissResult.locations.length > 0) {
+        return this.buildGeoValidationLayer(faissResult.locations, 'faiss');
+      }
+
+      const milvusEnabled = process.env.MILVUS_ENABLE === 'true';
+      if (milvusEnabled) {
+        const milvusResult = await this.validateCandidatesAgainstBackend('milvus', candidates, tweetId);
+        if (milvusResult.locations.length > 0) {
+          return this.buildGeoValidationLayer(milvusResult.locations, 'milvus');
+        }
+
+        if (milvusResult.error) {
+          return this.buildGeoValidationLayer([], 'milvus', milvusResult.error);
+        }
+      }
+
+      return this.buildGeoValidationLayer(faissResult.locations, 'none', faissResult.error);
+    } catch (error: any) {
+      console.error(`Vector validation failed for tweet ${tweetId}:`, error.message);
+      return this.buildGeoValidationLayer([], 'none', `vector_validation_error: ${error.message}`);
+    }
+  }
+
+  private async validateCandidatesAgainstBackend(
+    backend: VectorBackend,
+    candidates: NormalizedLocationHierarchy[],
+    tweetId: string
+  ): Promise<{ locations: string[]; error?: string }> {
+    const validatedLocations: string[] = [];
+    let lastError: string | undefined;
+
+    for (const candidate of candidates) {
+      const contextString = formatHierarchyForContext(candidate.originalTokens);
+
+      try {
+        const resultLabel = backend.toUpperCase();
+        console.log(
+          `  🔍 ${resultLabel} search for ${tweetId} candidate "${contextString}" (query="${candidate.query}")`
+        );
+
+        const searchResults =
+          backend === 'faiss'
+            ? await this.searchFAISS(candidate.query)
+            : await this.searchMilvus(candidate.query);
+
+        const validMatches = this.filterVectorMatches(searchResults, backend);
+
+        if (validMatches.length > 0) {
+          validatedLocations.push(contextString);
+          console.log(`  ✅ ${resultLabel} validated hierarchy "${contextString}" for tweet ${tweetId}`);
+        } else {
+          console.warn(
+            `  ⚠️ ${resultLabel} found no valid matches for "${contextString}" in tweet ${tweetId}`
+          );
+        }
+      } catch (searchError: any) {
+        const message = searchError?.message || 'unknown_error';
+        lastError = message;
+        console.warn(
+          `  ⚠️ ${backend.toUpperCase()} search failed for "${contextString}" in tweet ${tweetId}:`,
+          message
+        );
+      }
+    }
+
+    return { locations: validatedLocations, error: lastError };
+  }
+
+  private buildGeoValidationLayer(
+    locations: string[],
+    backend: VectorBackend | 'none',
+    error?: string
+  ): LayerResult {
+    const geoVerified = locations.length > 0;
     return {
-      ...regexResult,
-      layer: layer as any,
-      confidence: regexResult.confidence * 0.5 // Reduce confidence for fallback
+      layer: 'faiss',
+      event_type: 'geo_validation',
+      confidence: geoVerified ? 0.9 : 0.1,
+      locations,
+      people_mentioned: [],
+      organizations: [],
+      schemes_mentioned: [],
+      geo_verified: geoVerified,
+      geo_backend: backend,
+      ...(error ? { error } : {})
     };
+  }
+
+  private filterVectorMatches(results: VectorMatch[], backend: VectorBackend): VectorMatch[] {
+    const threshold = backend === 'milvus' ? 0.65 : 0.7;
+    return results.filter(result => typeof result.score === 'number' && result.score >= threshold);
+  }
+
+  /**
+   * Search FAISS for location validation
+   */
+  private async searchFAISS(query: string): Promise<any[]> {
+    const apiUrl = process.env.API_BASE || 'http://localhost:3000';
+    const response = await fetch(`${apiUrl}/api/labs/faiss/search?q=${encodeURIComponent(query)}&limit=3`);
+
+    if (!response.ok) {
+      throw new Error(`FAISS API returned ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  private async searchMilvus(query: string): Promise<VectorMatch[]> {
+    try {
+      const results: MilvusSearchResult[] = await searchMilvusLocations(query, 3);
+      return results;
+    } catch (error: any) {
+      throw new Error(error?.message || 'milvus_search_failed');
+    }
   }
 
   /**
@@ -480,19 +671,64 @@ Be accurate and specific.`;
    * Extract locations using regex
    */
   private extractLocations(tweetText: string): string[] {
-    const locationPatterns = [
-      /(रायपुर|दिल्ली|मुंबई|बिलासपुर|रायगढ़|छत्तीसगढ़|भारत)/gi
-    ];
+    const matches = new Set<string>();
+    const sanitizedText = tweetText.replace(/[“”"']/g, '').trim();
 
-    const locations: string[] = [];
-    locationPatterns.forEach(pattern => {
-      const matches = tweetText.match(pattern);
-      if (matches) {
-        locations.push(...matches);
+    const contextualPattern =
+      /(?:ग्राम|गांव|गाँव|ward|वार्ड|ब्लॉक|नगर पंचायत|नगर पालिका|नगर निगम|तहसील|जिला|काशी|village|block)\s*(?:number|\s*संख्या)?\s*[:\-]?\s*([A-Za-z\u0900-\u097F0-9\- ]{2,40})/gi;
+    let contextualMatch: RegExpExecArray | null;
+    while ((contextualMatch = contextualPattern.exec(sanitizedText)) !== null) {
+      const candidate = contextualMatch[1].trim();
+      const normalized = this.normalizeLocationCandidate(candidate);
+      if (normalized) {
+        matches.add(normalized);
+      }
+    }
+
+    const suffixPattern =
+      /([A-Za-z\u0900-\u097F]{3,}(?:\s+[A-Za-z\u0900-\u097F]{2,})?)\s*(?:जिला|नगर निगम|नगर पालिका|नगर पंचायत|नगर|city|district|block)/gi;
+    let suffixMatch: RegExpExecArray | null;
+    while ((suffixMatch = suffixPattern.exec(sanitizedText)) !== null) {
+      const candidate = suffixMatch[1].trim();
+      const normalized = this.normalizeLocationCandidate(candidate);
+      if (normalized) {
+        matches.add(normalized);
+      }
+    }
+
+    const coreLocations = ['रायपुर', 'रायगढ़', 'बिलासपुर', 'कोरबा', 'जांजगीर', 'chhattisgarh', 'raigarh', 'raipur'];
+    coreLocations.forEach(location => {
+      if (sanitizedText.toLowerCase().includes(location.toLowerCase())) {
+        matches.add(location);
       }
     });
 
-    return Array.from(new Set(locations));
+    return Array.from(matches);
+  }
+
+  private isMeaningfulLocation(candidate: string): boolean {
+    if (!candidate) return false;
+    if (candidate.length < 2) return false;
+    if (candidate.toLowerCase().includes('specific village ward names')) {
+      return false;
+    }
+    return true;
+  }
+
+  private normalizeLocationCandidate(candidate: string): string | null {
+    if (!this.isMeaningfulLocation(candidate)) {
+      return null;
+    }
+
+    const stopRegex = /(वार्ड|ward|जिला|district|नगर|city|ब्लॉक|block|nagar|nigam)/i;
+    const [primary] = candidate.split(stopRegex);
+    const normalized = primary.replace(/[\d\-]+$/, '').trim();
+
+    if (!this.isMeaningfulLocation(normalized)) {
+      return null;
+    }
+
+    return normalized;
   }
 
   /**
