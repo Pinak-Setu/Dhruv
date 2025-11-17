@@ -106,14 +106,17 @@ describe('Legacy glassmorphic-card prevention', () => {
     // Must have the complete utility definition
     const requiredTokens = [
       "'.glass-section-card'",
-      'rgba(255, 255, 255, 0.1)',
-      'rgba(255, 255, 255, 0.15)',
-      'rgba(255, 255, 255, 0.05)',
+      'rgba(255, 255, 255, 0.08)',
+      'rgba(255,255,255,0.10)',
+      'rgba(255,255,255,0.15)',
       'blur(24px)',
-      'rgba(255, 255, 255, 0.2)',
+      'rgba(255, 255, 255, 0.15)',
+      'rgba(255,255,255,0.12)',
+      'rgba(255,255,255,0.20)',
       'rgba(0, 0, 0, 0.25)',
       '1.5rem',
       'all 0.3s ease',
+      'textShadow',
     ];
 
     const missingTokens = requiredTokens.filter(token => !tailwindConfig.includes(token));
@@ -168,7 +171,11 @@ describe('Legacy glassmorphic-card prevention', () => {
                                 line.includes('legacyElements = document.querySelectorAll(\'.glassmorphic-card\')') ||
                                 line.includes('expect(legacyElements.length).toBe(0)') ||
                                 line.includes('Check that no element has the legacy class') ||
-                                line.includes('doesn\'t leak legacy glassmorphic-card classes');
+                                line.includes('doesn\'t leak legacy glassmorphic-card classes') ||
+                                line.includes('should not contain any glassmorphic-card legacy components') ||
+                                line.includes('Verify no legacy glassmorphic-card class exists') ||
+                                line.includes('const legacyCards = page.locator(\'.glassmorphic-card\')') ||
+                                line.includes('await expect(legacyCards).toHaveCount(0)');
 
           if (line.includes('glassmorphic-card') && !isAllowedCheck) {
             matches.push(index + 1); // 1-based line numbers
