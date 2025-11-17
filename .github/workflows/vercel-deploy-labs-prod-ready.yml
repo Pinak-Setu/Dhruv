@@ -26,13 +26,18 @@ jobs:
             echo "Missing Vercel secrets: VERCEL_TOKEN, VERCEL_ORG_ID or VERCEL_PROJECT_ID";
             exit 1;
           fi
+      - name: Check Vercel token validity
+        run: |
+          echo "Validating Vercel token and access"
+          npx vercel whoami --token=${{ secrets.VERCEL_TOKEN }} || (echo "Invalid Vercel token or insufficient permissions" && exit 1)
+
       - name: Pull Vercel Env
         run: |
           ENVIRONMENT=${{ github.event_name == 'workflow_dispatch' && (inputs.environment == 'prod' && 'production' || 'preview') || (github.event_name == 'push' && 'production' || 'preview') }}
           echo "Pulling env for: $ENVIRONMENT"
-            echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID }}"
-            # Use explicit project arg so the Vercel CLI can locate the project settings in CI
-            npx vercel pull --yes --environment=$ENVIRONMENT --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          echo "VERCEL_PROJECT_ID=${{ secrets.VERCEL_PROJECT_ID }}"
+          # Use explicit project arg so the Vercel CLI can locate the project settings in CI
+          npx vercel pull --yes --environment=$ENVIRONMENT --token=${{ secrets.VERCEL_TOKEN }} --project=${{ secrets.VERCEL_PROJECT_ID }}
       - name: Build (Vercel Build)
         run: npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
       - name: Deploy preview/production
